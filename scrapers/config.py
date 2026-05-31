@@ -1,0 +1,51 @@
+import re
+# Keep the Chrome version in this UA reasonably close to the
+# Chromium version Playwright ships
+USER_AGENT = (
+    "Mozilla/5.0 (Windows NT 10.0; Win64; x64) "
+    "AppleWebKit/537.36 (KHTML, like Gecko) "
+    "Chrome/124.0.0.0 Safari/537.36"
+)
+
+# Spread into new_context() with ** unpacking — keys must match
+# Playwright's parameter names exactly.
+BROWSER_LAUNCH = {
+    "user_data_dir": "./.playwright_profile",
+    "headless": False,
+    "args": ["--disable-blink-features=AutomationControlled"],
+}
+
+BROWSER_CONTEXT = {
+    "user_agent": USER_AGENT,
+    "viewport": {"width": 1366, "height": 768},
+    "locale": "en-SG",
+    "timezone_id": "Asia/Singapore",
+    "extra_http_headers": {
+        "Accept-Language": "en-SG,en;q=0.9",
+    },
+}
+
+# Block heavy media to speed pages up.
+BLOCK_RESOURCES = re.compile(
+    r"\.(png|jpe?g|gif|webp|svg|avif|woff2?|ttf|mp4)(\?|$)",
+    re.IGNORECASE,
+)
+
+
+# Playwright timeouts are in milliseconds.
+PAGE_NAV_TIMEOUT = 60_000
+DOM_WAIT_TIMEOUT = 100_000
+SPEC_WAIT_TIMEOUT = 45_000
+LOAD_MORE_TIMEOUT = 60_000
+
+# How long _expand_specs keeps retrying (seconds)
+EXPAND_SPECS_TOTAL_TIMEOUT = 45
+
+
+MAX_ATTEMPTS_PER_PRODUCT = 2
+BLOCK_BACKOFF_SECONDS = 900   # how long to sleep if we look blocked
+
+# Title or Body fragments that suggest we've been blocked / challenged.
+BLOCK_PAGE_MARKERS = ("the request could not be satisfied", "access denied", "are you a human", "just a moment",
+               "pardon our interruption", "checking your browser",
+               "verify you are human", "captcha")

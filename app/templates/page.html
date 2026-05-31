@@ -1,0 +1,17 @@
+<!DOCTYPE html>
+<html>
+<head><title>Landing</title></head>
+<body>
+  <h1>Items</h1>
+  <ul id="list">Loading...</ul>
+
+  <script>
+    fetch('/api/v1/items')
+      .then(r => r.json())
+      .then(data => {
+        const ul = document.getElementById('list')
+        ul.innerHTML = data.map(item => `<li>${JSON.stringify(item)}</li>`).join('')
+      })
+  </script>
+</body>
+</html>
