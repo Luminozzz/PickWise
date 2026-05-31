@@ -1,0 +1,145 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>Lumino — Proposed Palette (Your Name)</title>
+<style>
+  :root {
+    --bg: #070617;
+    --surface: #0D1020;            /* LOCKED: card background */
+    --surface-raised: #161A33;
+    --surface-hover: #212849;
+    --border: #2C315C;
+    --border-strong: #574E86;
+    --primary: #5CC8FF;
+    --primary-hover: #93E0FF;
+    --secondary: #9A6CF0;
+    --accent: #F7B58A;             /* LOCKED: navbar border */
+    --accent-soft: #E6A0C7;        /* LOCKED: navbar border */
+    --comet-magenta: #C7509E;
+    --horizon: #EE9A5E;
+    --gold: #FFE6A8;
+    --text-primary: #F4F2FF;
+    --text-secondary: #C4C0DC;
+    --text-muted: #8388AC;
+    --success: #5FD0C4;
+    --warning: #F0A86E;
+    --danger: #E25168;
+  }
+  * { box-sizing: border-box; }
+  body {
+    margin: 0;
+    padding: 48px 32px 80px;
+    background:
+      radial-gradient(1200px 600px at 75% -10%, #1b1c44 0%, transparent 60%),
+      var(--bg);
+    color: var(--text-primary);
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+  }
+  h1 { font-size: 26px; margin: 0 0 4px; }
+  .sub { color: var(--text-muted); margin: 0 0 36px; font-size: 14px; }
+  h2 { font-size: 15px; letter-spacing: .08em; text-transform: uppercase;
+       color: var(--text-secondary); margin: 36px 0 14px; }
+  .grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(150px, 1fr)); gap: 14px; }
+  .swatch {
+    border-radius: 12px; overflow: hidden;
+    border: 1px solid var(--border);
+    background: var(--surface);
+  }
+  .chip { height: 84px; position: relative; }
+  .meta { padding: 10px 12px 12px; }
+  .name { font-size: 13px; font-weight: 600; }
+  .hex  { font-size: 12px; color: var(--text-muted); font-family: ui-monospace, monospace; margin-top: 2px; }
+  .lock { position: absolute; top: 8px; right: 10px; font-size: 11px; font-weight: 700;
+          background: rgba(0,0,0,.45); color: #fff; padding: 2px 7px; border-radius: 20px; }
+  /* The comet gradient — the spine of the theme */
+  .comet {
+    height: 64px; border-radius: 40px; margin-bottom: 8px;
+    background: linear-gradient(90deg, #BFE4FF, var(--primary), var(--secondary),
+                var(--comet-magenta), var(--danger), var(--horizon), var(--gold));
+    box-shadow: 0 0 24px rgba(92,200,255,.4), 0 0 48px rgba(154,108,240,.25);
+  }
+  /* Mock UI to sanity-check the locked tokens in context */
+  .demo { display: grid; grid-template-columns: 1fr 1fr; gap: 20px; margin-top: 18px; }
+  .navbar { position: relative; padding: 18px 22px; display: flex; justify-content: space-between;
+            align-items: center; background: var(--surface); border-radius: 12px; }
+  .navbar::after {
+    content: ''; position: absolute; left: 22px; right: 22px; bottom: 0; height: 2px; border-radius: 2px;
+    background: linear-gradient(90deg, transparent, var(--accent) 20%, var(--accent-soft) 80%, transparent);
+    box-shadow: 0 0 8px var(--accent), 0 0 16px var(--accent-soft);
+  }
+  .brand { font-weight: 700; color: var(--secondary); }
+  .btn { background: var(--primary); color: #061018; border: none; border-radius: 8px;
+         padding: 9px 16px; font-weight: 600; }
+  .card { background: var(--surface); border: 1px solid var(--border); border-radius: 16px; padding: 18px; }
+  .card h3 { margin: 0 0 6px; color: var(--text-primary); }
+  .card p { margin: 0 0 14px; color: var(--text-secondary); font-size: 14px; }
+  .tag { display: inline-block; background: var(--surface-raised); border: 1px solid var(--border);
+         color: var(--text-muted); border-radius: 8px; padding: 4px 9px; font-size: 12px; margin-right: 6px; }
+</style>
+</head>
+<body>
+  <h1>Lumino — Proposed Colour Palette</h1>
+  <p class="sub">Derived from the two <em>Your Name</em> comet scenes. Locked tokens marked 🔒. Preview only — site unchanged.</p>
+
+  <div class="comet"></div>
+
+  <h2>Base &amp; Surfaces</h2>
+  <div class="grid" id="g-base"></div>
+
+  <h2>Brand</h2>
+  <div class="grid" id="g-brand"></div>
+
+  <h2>Accent (Navbar border 🔒) &amp; Comet tones</h2>
+  <div class="grid" id="g-accent"></div>
+
+  <h2>Text</h2>
+  <div class="grid" id="g-text"></div>
+
+  <h2>Status</h2>
+  <div class="grid" id="g-status"></div>
+
+  <h2>In context</h2>
+  <div class="demo">
+    <div class="navbar"><span class="brand">PickWise</span><button class="btn">Login</button></div>
+    <div class="card">
+      <h3>Logitech G Pro X</h3>
+      <p>Lightweight wireless gaming mouse with a great sensor.</p>
+      <span class="tag">wireless</span><span class="tag">lightweight</span><span class="tag">63g</span>
+    </div>
+  </div>
+
+<script>
+  const groups = {
+    'g-base': [
+      ['Background','#070617'],['Card surface 🔒','#0D1020','lock'],
+      ['Surface raised','#161A33'],['Surface hover','#212849'],
+      ['Border','#2C315C'],['Border strong','#574E86'],
+    ],
+    'g-brand': [
+      ['Primary (comet cyan)','#5CC8FF'],['Primary hover','#93E0FF'],
+      ['Secondary (violet)','#9A6CF0'],
+    ],
+    'g-accent': [
+      ['Accent 🔒','#F7B58A','lock'],['Accent soft 🔒','#E6A0C7','lock'],
+      ['Comet magenta','#C7509E'],['Horizon','#EE9A5E'],['Gold','#FFE6A8'],
+    ],
+    'g-text': [
+      ['Text primary','#F4F2FF'],['Text secondary','#C4C0DC'],['Text muted','#8388AC'],
+    ],
+    'g-status': [
+      ['Success (teal)','#5FD0C4'],['Warning','#F0A86E'],['Danger (crimson)','#E25168'],
+    ],
+  };
+  for (const [id, list] of Object.entries(groups)) {
+    const el = document.getElementById(id);
+    el.innerHTML = list.map(([name, hex, lock]) => `
+      <div class="swatch">
+        <div class="chip" style="background:${hex}">${lock ? '<span class="lock">LOCKED</span>' : ''}</div>
+        <div class="meta"><div class="name">${name}</div><div class="hex">${hex}</div></div>
+      </div>`).join('');
+  }
+</script>
+</body>
+</html>
