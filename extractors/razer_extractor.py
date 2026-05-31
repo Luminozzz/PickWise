@@ -3,6 +3,7 @@ from enum import Enum
 from collections import defaultdict
 from pathlib import Path
 from extractors.parent_extractor import extractor
+from extractors import config
 
 class razer_extractor(extractor):
     
@@ -12,28 +13,28 @@ class razer_extractor(extractor):
     def extract_feature(self, feature, value):
         feature = feature.lower()
 
-        if feature == "form factor":
+        if feature in config.RAZER_FORM_FACTOR:
             return [('hand_fit', self.hand_fit(value)),
                     ('ergonomy', self.ergonomy(value))]
-        elif feature == "programmable buttons":
+        elif feature in config.RAZER_PROGRAMMABLE_BUTTONS:
             return ('number_of_buttons', self.number_of_buttons(value))
-        elif feature == "connectivity":
+        elif feature in config.RAZER_CONNECTIVITY:
             return ('connectivity', self.connectivity(value))
-        elif feature == "battery life":
+        elif feature in config.RAZER_BATTERY_LIFE:
             return ('battery_life', self.battery_life(value))
-        elif feature == "max sensitivity (dpi)":
+        elif feature in config.RAZER_MAX_DPI:
             return ('max_DPI', self.max_DPI(value))
-        elif feature == "max speed (ips)":
+        elif feature in config.RAZER_TRACKING_SPEED:
             return ('tracking_speed', self.tracking_speed(value))
-        elif feature == "max acceleration (g)":
+        elif feature in config.RAZER_MAX_ACCELERATION:
             return ('max_acceleration', self.max_acceleration(value))
-        elif feature == "weight":
+        elif feature in config.RAZER_WEIGHT:
             return ('weight', self.weight(value))
-        elif feature == "size":
+        elif feature in config.RAZER_SIZE:
             return [('length', self.length(value)), 
                     ('width', self.width(value)), 
                     ('height', self.height(value))]
-        elif feature == "polling rate / interval":
+        elif feature in config.RAZER_POLLING_RATE:
             return ('polling_rate', self.polling_rate(value))
         else:
             return ('other_features', str(feature) + ": " + str(value) + '\n')
