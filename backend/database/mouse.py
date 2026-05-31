@@ -67,7 +67,8 @@ class Gaming_Mouse(Base):
     tracking_speed = Column(Integer) # Tracking speed measured in inches per second (IPS)
 
 def create_session():
-    sync_url = DATABASE_URL.replace("+aiosqlite", "")
+    # Async driver -> sync driver for the seeding/admin path.
+    sync_url = DATABASE_URL.replace("+aiosqlite", "").replace("+asyncpg", "+psycopg2")
     engine = create_engine(sync_url)
     Base.metadata.create_all(engine)
     Session = sessionmaker(bind=engine)
