@@ -1,11 +1,10 @@
-import Logo from './Logo.jsx'
 import { User, Grid } from './icons.jsx'
 
 export default function Navbar() {
   return (
     <header className="navbar">
       <a className="navbar__brand" href="/">
-        <Logo className="navbar__logo" />
+        <img className="navbar__logo" src="/logo.png" alt="PickWise logo" />
         PickWise
       </a>
       <nav className="navbar__nav">
