@@ -51,44 +51,93 @@ class amazon_new_product_price_scraper(scrapy.Spider):
                     for div in divs:
                         title_elem = div.find('div', attrs = {'data-cy': 'title-recipe'}).find('a', recursive=False).find('span')
                         price_elem = div.find('div', attrs={'data-cy': 'price-recipe'}).find('span', class_ = 'a-offscreen')
+                        review_elem = div.find('div', attrs={'data-cy': 'reviews-block'})
+                        
                         
                         if title_elem is None:
+                            print(mouse + ": title cannot be found")
                             continue
+
+                        if review_elem is None:
+                            num_of_stars = 0.0
+                            num_of_reviews = 0
+                        else:
+                            num_of_stars = review_elem.find('span', class_ = ['a-size-small', 'a-color-base']).text
+                            num_of_reviews = review_elem.find('span', class_ = ['a-size-mini', 'puis-normal-weight-text']).text
+
+                            num_of_reviews = str(num_of_reviews).strip("()").upper()
+                            if 'K' in num_of_reviews:
+                                num_of_reviews = int(float(num_of_reviews.replace('K','')) * 1000)
+                            elif 'M' in num_of_reviews:
+                                num_of_reviews = int(float(num_of_reviews.replace('M','')) * 1_000_000)
+                            else:
+                                num_of_reviews = int(num_of_reviews)
+                                
+                            
+
 
                         title = title_elem.text.strip()
                         clean_title = re.search(r'(.+?)(?:\s*[-,]\s*)',title).group(1).strip() if re.search(r'(.+?)(?:\s*[-,]\s*)',title) else title.strip()
                         price = float(re.search(r"\d[\d,]*(?:\.\d+)?", price_elem.text.strip()).group(0).replace(",", "")) if price_elem else None
 
                         num_of_ele = len(mouse.split()) + config.NUMBER_OF_EXTRA_WORDS
-                        clean_title = " ".join((clean_title.split())[:num_of_ele])
-                        score = fuzz.WRatio(mouse, clean_title)
+                        clean_title_v1 = " ".join((clean_title.split())[:num_of_ele])
+                        clean_title_v2 = " ".join((title.split())[:num_of_ele])
+                        score = max(fuzz.WRatio(mouse, clean_title_v1), fuzz.WRatio(mouse, clean_title_v2))
                         ASIN = div['data-asin']
                         product_pool.append({
                             'title': title,
-                            'clean_title': clean_title,
+                            'clean_title_v1': clean_title_v1,
+                            'clean_title_v2': clean_title_v2,
                             'ASIN': ASIN,
                             'price': price,
+                            'num_of_stars': float(num_of_stars),
+                            'num_of_reviews': num_of_reviews,
                             'score': score
                         })
+
                     max_score = max(product_pool, key = lambda x: x['score'])['score']
 
                     for product in product_pool:
                         product['score_diff'] = max_score - product['score']
 
                     exact_words = mouse.lower().split()[1:]
-                    candidates_for_price = [p for p in product_pool if p['score_diff'] <= 3 and all(word in p['clean_title'].lower().split() for word in exact_words) and p['price'] is not None]
+
+                    filter_no_price = [p for p in product_pool if p['price'] is not None]
+                    candidates_for_price = [p for p in filter_no_price if p['score_diff'] <= config.SIMILARITY_SCORE_DIFFERENCE_THRESHOLD and all(word in p['clean_title_v2'].lower().split() for word in exact_words)]
                     if not candidates_for_price:
+                        print(mouse + ": price not found")
                         continue
 
-                    best_match = min(candidates_for_price, key = lambda x: x['price'])
+                    avg_reviews = sum(review['num_of_stars'] * review['num_of_reviews'] for review in candidates_for_price)/len(candidates_for_price)
+
+                    for candidate in candidates_for_price:
+                        candidate['weighted_review_score'] = (config.CONFIDENCE_LEVEL * avg_reviews + candidate['num_of_stars'] * candidate['num_of_reviews']) / (config.CONFIDENCE_LEVEL + candidate['num_of_reviews'])
+
                     
+
+                    best_match_for_price = min(candidates_for_price, key = lambda x: x['price'])
+                    best_match_for_reviews = max(candidates_for_price, key = lambda x: x['weighted_review_score'])
+
                     human_behaviour.human_mouse_move(page)
                     human_behaviour.human_pause(page, 2000, 5000)
                     data.append({
                         'product_name': mouse,
-                        'ASIN': best_match['ASIN'],
-                        'link': f'https://www.amazon.sg/dp/{best_match["ASIN"]}',
-                        'price': best_match['price']
+                        'ASIN': best_match_for_price['ASIN'],
+                        'link': f'https://www.amazon.sg/dp/{best_match_for_price["ASIN"]}',
+                        'price': best_match_for_price['price'],
+                        'num_of_stars': best_match_for_price['num_of_stars'],
+                        'num_of_reviews': best_match_for_price['num_of_reviews'],
+                        'sort_by': 'price'
+                    })
+                    data.append({
+                        'product_name': mouse,
+                        'ASIN': best_match_for_reviews['ASIN'],
+                        'link': f'https://www.amazon.sg/dp/{best_match_for_reviews["ASIN"]}',
+                        'price': best_match_for_reviews['price'],
+                        'num_of_stars': best_match_for_reviews['num_of_stars'],
+                        'num_of_reviews': best_match_for_reviews['num_of_reviews'],
+                        'sort_by': 'reviews'
                     })
                 except Exception as e:
                     print(f"failed: {type(e).__name__}: {e}")
@@ -152,9 +201,12 @@ class amazon_new_product_price_scraper(scrapy.Spider):
                         'date': datetime.date.today(),
                         'currency': currency,
                         'price': value,
+                        'num_of_stars': mouse['num_of_stars'],
+                        'num_of_reviews': mouse['num_of_reviews'],
                         'colour': colour,
                         'store_link': mouse['link'],
-                        'store_name': 'Amazon'     
+                        'store_name': 'Amazon',
+                        'sort_by': mouse['sort_by']
                     })
                 # if other variant exists
                     if extra:
@@ -172,6 +224,22 @@ class amazon_new_product_price_scraper(scrapy.Spider):
                             soup = BeautifulSoup(html, 'html.parser')
 
                             price_with_currency = soup.find('span', class_ = 'a-price').find('span', class_ = 'a-offscreen').text.strip()
+                            review_elem = soup.find('div#averageCustomerReviews_feature_div')
+                            num_of_stars = review_elem.find('span', class_ = ['a-size-small', 'a-color-base']).text
+                            num_of_reviews = review_elem.find('span#acrCustomerReviewText').text
+
+                            if num_of_reviews is None or num_of_stars is None:
+                                num_of_stars = 0.0
+                                num_of_reviews = 0
+                            else:
+                                num_of_stars = float(num_of_stars)
+                                num_of_reviews = str(num_of_reviews).strip("()").upper()
+                                if 'K' in num_of_reviews:
+                                    num_of_reviews = int(float(num_of_reviews.replace('K','')) * 1000)
+                                elif 'M' in num_of_reviews:
+                                    num_of_reviews = int(float(num_of_reviews.replace('M','')) * 1_000_000)
+                                else:
+                                    num_of_reviews = int(num_of_reviews)
                             
                             m_cur = re.match(r"^[^\d\s]+", price_with_currency)
                             currency = m_cur.group(0) if m_cur else None
@@ -179,7 +247,7 @@ class amazon_new_product_price_scraper(scrapy.Spider):
                             value = float(m_num.group(0).replace(",", "")) if m_num else None
 
                             colour = soup.find('table', class_ = 'a-normal')
-                            print(colour)
+                            
                             if colour is None:
                                 colour = None
                             else:
@@ -189,9 +257,12 @@ class amazon_new_product_price_scraper(scrapy.Spider):
                                 'date': datetime.date.today(),
                                 'currency': currency,
                                 'price': value,
+                                'num_of_stars': num_of_stars,
+                                'num_of_reviews': num_of_reviews,
                                 'colour': colour,
                                 'store_link': mouse['link'],
-                                'store_name': 'Amazon'     
+                                'store_name': 'Amazon',
+                                'sort_by': 'price'    
                             })
                             human_behaviour.human_mouse_move(page)
                             human_behaviour.human_pause(page, 2000, 5000)
@@ -213,7 +284,9 @@ if __name__ == "__main__":
     scraper = amazon_new_product_price_scraper()
     lst_of_mouse = ["Logitech G502 LIGHTSPEED", "Logitech G502", "Logitech G502 X"]
     search_data = scraper.scrape_amazon_price(lst_of_mouse)
+    print(search_data)
     price_data = scraper.scrape_amazon_price_from_product_page(search_data)
+    print(price_data)
 
 
 

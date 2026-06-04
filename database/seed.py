@@ -1,4 +1,4 @@
-from database.models import db, Mouse, Gaming_Mouse, Price_History, Mouse_Skins, Hand_Fit, Ergonomy, Connectivity, create_app
+from database.models import db, Mouse, Gaming_Mouse, Sort_By, Price_History, Mouse_Skins, Hand_Fit, Ergonomy, Connectivity, create_app
 from scrapers import *
 from extractors import *
 import sys
@@ -81,14 +81,14 @@ def add_mouse_skins():
 def add_new_product_price():
     with app.app_context():
         db.create_all()
-        # ids_in_price_db = db.session.query(Price_History.mouse_id).distinct().all()
-        # ids_in_price_db = [row[0] for row in ids_in_price_db]
-        # all_mouses = Mouse.query.all()
-        # mice_not_in_price_db = [mouse for mouse in all_mouses if mouse.id not in ids_in_price_db]
-
-        data = ['Logitech G705', 'Logitech PRO X SUPERLIGHT 2', 'Logitech M720 Triathlon']
-        # for mouse in mice_not_in_price_db:
-        #     data.append(mouse.product_name)
+        ids_in_price_db = db.session.query(Price_History.mouse_id).distinct().all()
+        ids_in_price_db = [row[0] for row in ids_in_price_db]
+        all_mouses = Mouse.query.all()
+        mice_not_in_price_db = [mouse for mouse in all_mouses if mouse.id not in ids_in_price_db]
+        data = []
+        #data = ['Logitech G705', 'Logitech M720 Triathlon']
+        for mouse in mice_not_in_price_db:
+            data.append(mouse.product_name)
         scraper = amazon_new_product_price_scraper()
         revised_data = scraper.run(data)
         for item in revised_data:
@@ -100,9 +100,12 @@ def add_new_product_price():
                     date = item['date'],
                     currency = item['currency'],
                     price = item['price'],
+                    num_of_stars = item['num_of_stars'],
+                    num_of_reviews = item['num_of_reviews'],
                     colour = item['colour'],
                     store_link = item['store_link'],
-                    store_name = item['store_name']
+                    store_name = item['store_name'],
+                    sort_by = Sort_By(item['sort_by'])
                 )
                 db.session.add(price)
         db.session.commit()

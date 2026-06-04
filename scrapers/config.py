@@ -81,7 +81,11 @@ BLOCK_PAGE_MARKERS = ("the request could not be satisfied", "access denied", "ar
                "verify you are human", "captcha")
 
 # Comparing Number of products
-NUMBER_OF_PRODUCTS_COMPARISON = 10
+NUMBER_OF_PRODUCTS_COMPARISON = 15
 
+#Score difference threshold
+SIMILARITY_SCORE_DIFFERENCE_THRESHOLD = 15
+#Number of reviews such that we users would few comfortable to purchase the product
+CONFIDENCE_LEVEL = 10
 
 NUMBER_OF_EXTRA_WORDS = 3

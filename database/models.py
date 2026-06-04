@@ -19,6 +19,11 @@ class Connectivity(Enum):
     WIRED_AND_WIRELESS = "wired + wireless"
     STRICTLY_WIRED = "strictly wired"
 
+class Sort_By(Enum):
+    REVIEW = 'reviews'
+    PRICE = 'price'
+    OFFICIAL = 'official'
+
 class Mouse(db.Model):
     __tablename__ = "mouse_model"
 
@@ -75,9 +80,12 @@ class Price_History(db.Model):
     date = db.Column(db.Date, nullable=False)
     currency = db.Column(db.String, nullable=False)
     price = db.Column(db.Float, nullable=False)
+    num_of_stars = db.Column(db.Float, nullable=False)
+    num_of_reviews = db.Column(db.Integer, nullable = False)
     colour = db.Column(db.String, nullable=True)
     store_link = db.Column(db.String, nullable=False)
     store_name = db.Column(db.String, nullable=False)
+    sort_by = db.Column(db.Enum(Sort_By))
 
 def create_app():
     app = Flask(__name__)

@@ -16,13 +16,14 @@ app = create_app()
 # Drop Tables
 # with app.app_context():
 #     Price_History.__table__.drop(db.engine)
+#     Price_History.__table__.create(db.engine)
 
 # Remove rows
-with app.app_context():
-    mouse = Price_History.query.filter_by(product_name="Logitech M720 Triathlon").first()
-    if mouse:
-        db.session.delete(mouse)
-        db.session.commit()
-        print("Deleted!")
-    else:
-        print("Mouse not found.")
+# with app.app_context():
+#     mouse = Price_History.query.filter_by(product_name="Logitech M720 Triathlon").first()
+#     if mouse:
+#         db.session.delete(mouse)
+#         db.session.commit()
+#         print("Deleted!")
+#     else:
+#         print("Mouse not found.")
