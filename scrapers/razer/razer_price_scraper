@@ -1,0 +1,30 @@
+import scrapy
+from playwright.async_api import sync_playwright, TimeoutError as PlaywrightTimeoutError
+from bs4 import BeautifulSoup
+import re
+from urllib.parse import urljoin
+import random
+import time
+import datetime
+from scrapers import config
+from playwright_stealth import Stealth
+import unicodedata
+
+class razer_price_scraper(scrapy.Spider):
+    name = "razer_price_scraper"
+    amazon_store_url = "https://www.amazon.sg/stores/page/2169C325-8EF1-43C5-8CA0-EFF1403E328D/search?terms="
+
+    # List of dictionary. Each element contains the product_name
+    def scrape_razer_mouse_colours(self, lst_of_mouse):
+        data = []
+
+        with Stealth().use_sync(sync_playwright()) as p:
+            browser = p.chromium.launch_persistent_context(**config.BROWSER_LAUNCH, **config.BROWSER_CONTEXT)
+            browser.route("**/*",
+                lambda route: route.abort()
+                if re.search(r"\.(png|jpe?g|gif|webp|svg|avif|woff2?|ttf|mp4)(\?|$)",
+                            route.request.url, re.IGNORECASE)
+                else route.continue_()
+                )
+            page = browser.new_page()
+        return data

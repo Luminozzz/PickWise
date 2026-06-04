@@ -23,7 +23,7 @@ class Mouse(db.Model):
     __tablename__ = "mouse_model"
 
     id = db.Column(db.Integer, primary_key = True)
-    product_name = db.Column(db.String, nullable = False)
+    product_name = db.Column(db.String, nullable = False, unique = True)
     brand_name = db.Column(db.String, nullable = False)
     link = db.Column(db.String)
     img_link = db.Column(db.String)
@@ -43,7 +43,7 @@ class Mouse(db.Model):
     other_features = db.Column(db.String)
 
     gaming_specs = db.relationship('Gaming_Mouse', backref='mouse', uselist=False)
-    
+    skins = db.relationship('Mouse_Skins', backref='mouse', lazy=True)
     @property
     def rechargeable(self):
         if self.connectivity != Connectivity.STRICTLY_WIRED and self.min_battery_life != self.max_battery_life: # 1 month battery life
@@ -57,6 +57,28 @@ class Gaming_Mouse(db.Model):
     acceleration = db.Column(db.Integer) # Maximum linear acceleration in G’s before mouse stops working properly.
     tracking_speed = db.Column(db.Integer) # Tracking speed measured in inches per second (IPS)
 
+class Mouse_Skins(db.Model):
+    __tablename__ = "mouse_skins"
+
+    id = db.Column(db.Integer, primary_key = True, autoincrement=True)
+    mouse_id = db.Column(db.Integer, db.ForeignKey('mouse_model.id'), nullable=False)
+    product_name = db.Column(db.String, nullable=False)
+    colour = db.Column(db.String, nullable=False)
+    img_link = db.Column(db.String, nullable=False)
+
+class Price_History(db.Model):
+    __tablename__ = "price_history"
+
+    id = db.Column(db.Integer, primary_key = True, autoincrement=True)
+    mouse_id = db.Column(db.Integer, db.ForeignKey('mouse_model.id'), nullable=False)
+    product_name = db.Column(db.String, nullable=False)
+    date = db.Column(db.Date, nullable=False)
+    currency = db.Column(db.String, nullable=False)
+    price = db.Column(db.Float, nullable=False)
+    colour = db.Column(db.String, nullable=True)
+    store_link = db.Column(db.String, nullable=False)
+    store_name = db.Column(db.String, nullable=False)
+
 def create_app():
     app = Flask(__name__)
     db_path = os.path.join(os.path.dirname(__file__), 'mice3.db')
@@ -66,11 +88,7 @@ def create_app():
     return app
 
 
-# class PriceHistory(db.Model):
-#     __tablename__ = "price_history"
 
-#     mouse_id = db.Column(db.Integer, db.ForeignKey('mouse_model.id'), nullable=False)
-#     date = db.Column(db.Date, nullable=False)
-#     price = db.Column(db.Float, nullable=False)
+
 
 

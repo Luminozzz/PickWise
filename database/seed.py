@@ -1,11 +1,14 @@
-from database.models import db, Mouse, Gaming_Mouse, Hand_Fit, Ergonomy, Connectivity, create_app
+from database.models import db, Mouse, Gaming_Mouse, Price_History, Mouse_Skins, Hand_Fit, Ergonomy, Connectivity, create_app
 from scrapers import *
 from extractors import *
+import sys
 
 BRAND_EXTRACTORS = {
     #'Razer': (razer_extractor, razer_scraper),
     'Logitech': (logitech_extractor, logitech_scraper)
 }
+
+app = create_app()
 
 def seed_all():
     for brand_name, (Extractor_Class, Scraper_Class) in BRAND_EXTRACTORS.items():
@@ -53,8 +56,63 @@ def seed_all():
                 db.session.add(gaming)
     db.session.commit()
 
-if __name__ == "__main__":
-    app = create_app()
+def add_mouse_skins():
     with app.app_context():
         db.create_all()
-        seed_all()
+        razer_mouses = Mouse.query.filter_by(brand_name="Razer").all()
+        data = []
+        for mouse in razer_mouses:
+            data.append({'product_name': mouse.product_name, 'link': mouse.link})
+        scraper = razer_skin_scraper()
+        revised_data = scraper.run(data)
+        for item in revised_data:
+            exists = Mouse_Skins.query.filter_by(product_name=item['product_name']).first()
+            mouse = Mouse.query.filter_by(product_name=item['product_name']).first()
+            if mouse and not exists:
+                skin = Mouse_Skins(
+                    mouse_id = mouse.id,
+                    product_name = item['product_name'],
+                    colour = item['colour'],
+                    img_link = item['img_link']
+                )
+                db.session.add(skin)
+        db.session.commit()
+
+def add_new_product_price():
+    with app.app_context():
+        db.create_all()
+        # ids_in_price_db = db.session.query(Price_History.mouse_id).distinct().all()
+        # ids_in_price_db = [row[0] for row in ids_in_price_db]
+        # all_mouses = Mouse.query.all()
+        # mice_not_in_price_db = [mouse for mouse in all_mouses if mouse.id not in ids_in_price_db]
+
+        data = ['Logitech G705', 'Logitech PRO X SUPERLIGHT 2', 'Logitech M720 Triathlon']
+        # for mouse in mice_not_in_price_db:
+        #     data.append(mouse.product_name)
+        scraper = amazon_new_product_price_scraper()
+        revised_data = scraper.run(data)
+        for item in revised_data:
+            mouse = Mouse.query.filter_by(product_name=item['product_name']).first()
+            if mouse:
+                price = Price_History(
+                    mouse_id = mouse.id,
+                    product_name = item['product_name'],
+                    date = item['date'],
+                    currency = item['currency'],
+                    price = item['price'],
+                    colour = item['colour'],
+                    store_link = item['store_link'],
+                    store_name = item['store_name']
+                )
+                db.session.add(price)
+        db.session.commit()
+
+if __name__ == "__main__":
+    if sys.argv[1] == 'seed_all':
+        with app.app_context():
+            db.create_all()
+            seed_all()
+    if sys.argv[1] == 'add_mouse_skins':
+        add_mouse_skins()
+    if sys.argv[1] == 'add_new_product_price':
+        add_new_product_price()

@@ -1,11 +1,39 @@
 import re
+import random
 # Keep the Chrome version in this UA reasonably close to the
 # Chromium version Playwright ships
-USER_AGENT = (
-    "Mozilla/5.0 (Windows NT 10.0; Win64; x64) "
-    "AppleWebKit/537.36 (KHTML, like Gecko) "
-    "Chrome/124.0.0.0 Safari/537.36"
-)
+
+IDENTITY_PROFILES = [
+    {
+        "user_agent": (
+            "Mozilla/5.0 (Windows NT 10.0; Win64; x64) "
+            "AppleWebKit/537.36 (KHTML, like Gecko) "
+            "Chrome/124.0.0.0 Safari/537.36"
+        ),
+        "viewport": {"width": 1366, "height": 768},
+    },
+    {
+        "user_agent": (
+            "Mozilla/5.0 (Windows NT 10.0; Win64; x64) "
+            "AppleWebKit/537.36 (KHTML, like Gecko) "
+            "Chrome/125.0.0.0 Safari/537.36"
+        ),
+        "viewport": {"width": 1920, "height": 1080},
+    },
+    {
+        "user_agent": (
+            "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) "
+            "AppleWebKit/537.36 (KHTML, like Gecko) "
+            "Chrome/125.0.0.0 Safari/537.36"
+        ),
+        "viewport": {"width": 1680, "height": 1050},
+    },
+]
+
+_ACTIVE_PROFILE = random.choice(IDENTITY_PROFILES)
+
+USER_AGENT = _ACTIVE_PROFILE["user_agent"]
+VIEWPORT = _ACTIVE_PROFILE["viewport"]
 
 # Spread into new_context() with ** unpacking — keys must match
 # Playwright's parameter names exactly.
@@ -17,9 +45,11 @@ BROWSER_LAUNCH = {
 
 BROWSER_CONTEXT = {
     "user_agent": USER_AGENT,
-    "viewport": {"width": 1366, "height": 768},
+    "viewport": VIEWPORT,
     "locale": "en-SG",
     "timezone_id": "Asia/Singapore",
+    "geolocation": {"latitude": 1.3521, "longitude": 103.8198},
+    "permissions": ["geolocation"],
     "extra_http_headers": {
         "Accept-Language": "en-SG,en;q=0.9",
     },
@@ -49,3 +79,9 @@ BLOCK_BACKOFF_SECONDS = 900   # how long to sleep if we look blocked
 BLOCK_PAGE_MARKERS = ("the request could not be satisfied", "access denied", "are you a human", "just a moment",
                "pardon our interruption", "checking your browser",
                "verify you are human", "captcha")
+
+# Comparing Number of products
+NUMBER_OF_PRODUCTS_COMPARISON = 10
+
+
+NUMBER_OF_EXTRA_WORDS = 3
