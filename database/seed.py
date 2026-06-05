@@ -81,14 +81,15 @@ def add_mouse_skins():
 def add_new_product_price():
     with app.app_context():
         db.create_all()
-        ids_in_price_db = db.session.query(Price_History.mouse_id).distinct().all()
-        ids_in_price_db = [row[0] for row in ids_in_price_db]
-        all_mouses = Mouse.query.all()
-        mice_not_in_price_db = [mouse for mouse in all_mouses if mouse.id not in ids_in_price_db]
-        data = []
-        #data = ['Logitech G705', 'Logitech M720 Triathlon']
-        for mouse in mice_not_in_price_db:
-            data.append(mouse.product_name)
+        # ids_in_price_db = db.session.query(Price_History.mouse_id).distinct().all()
+        # ids_in_price_db = [row[0] for row in ids_in_price_db]
+        # all_mouses = Mouse.query.all()
+        # mice_not_in_price_db = [mouse for mouse in all_mouses if mouse.id not in ids_in_price_db]
+        # data = []
+       
+        # for mouse in mice_not_in_price_db:
+        #     data.append(mouse.product_name)
+        data = ['Razer Cobra Pro']
         scraper = amazon_new_product_price_scraper()
         revised_data = scraper.run(data)
         for item in revised_data:

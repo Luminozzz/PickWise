@@ -4,9 +4,9 @@ app = create_app()
 
 # Update rows
 # with app.app_context():
-#     mouse = Mouse.query.filter_by(product_name="Razer Viper V3 HyperSpeed").first()
+#     mouse = Price_History.query.filter_by(product_name="Logitech Logitech G303 Shroud Edition").first()
 #     if mouse:
-#         mouse.img_link = 'https://assets3.razerzone.com/y265A8on-spu30uzfYMFCzGGBpU=/300x300/https%3A%2F%2Fmedias-p1.phoenix.razer.com%2Fsys-master-phoenix-images-container%2Fhb2%2Fhb9%2F9529652379678%2Fnaga-v2-pro-2-500x500.png'
+#         mouse.product_name = 'Logitech G303 Shroud Edition'
 #         db.session.commit()
 #         print("Updated!")
 #     else:
@@ -20,7 +20,7 @@ app = create_app()
 
 # Remove rows
 # with app.app_context():
-#     mouse = Price_History.query.filter_by(product_name="Logitech M720 Triathlon").first()
+#     mouse = Price_History.query.filter_by(product_name="Razer Cobra Pro").first()
 #     if mouse:
 #         db.session.delete(mouse)
 #         db.session.commit()

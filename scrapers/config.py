@@ -88,4 +88,6 @@ SIMILARITY_SCORE_DIFFERENCE_THRESHOLD = 15
 #Number of reviews such that we users would few comfortable to purchase the product
 CONFIDENCE_LEVEL = 10
 
-NUMBER_OF_EXTRA_WORDS = 3
+NUMBER_OF_EXTRA_WORDS = 2
+
+KEYWORDS_TO_EXCLUDE = ['grip', 'case', 'casing','skates', 'glides', 'tape', 'supergrip', 'gears']
