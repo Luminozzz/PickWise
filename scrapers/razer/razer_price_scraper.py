@@ -29,7 +29,7 @@ class razer_price_scraper(scrapy.Spider):
             page = browser.new_page()
             for mouse in lst_of_mouse:
                 try:
-                    page.goto(mouse['link'])
+                    page.goto(mouse['link'], timeout = 60000)
                     page.wait_for_load_state('domcontentloaded', timeout = 60000)
 
                     html = page.content()
@@ -42,7 +42,8 @@ class razer_price_scraper(scrapy.Spider):
                     if price_ele is None:
                         continue
                     price_with_currency = price_ele.text.strip()
-                    m_cur = re.match(r"^[^\d\s]+", price_with_currency)
+                    print(price_with_currency)
+                    m_cur = re.search(r"[^\d\s]+(?=\d)", price_with_currency)
                     currency = m_cur.group(0) if m_cur else None
                     m_num = re.search(r"\d[\d,]*(?:\.\d+)?", price_with_currency)
                     value = float(m_num.group(0).replace(",", "")) if m_num else None
@@ -54,6 +55,7 @@ class razer_price_scraper(scrapy.Spider):
                         'price': value,
                         'num_of_stars': None,
                         'num_of_reviews': None,
+                        'colour': mouse['colour'],
                         'store_link': mouse['link'],
                         'store_name': 'Razer official store',
                         'sort_by': 'official'
@@ -66,6 +68,12 @@ class razer_price_scraper(scrapy.Spider):
             print(f'1st func: {failed}')
         return data
     
+    def run(self, lst_of_mouse):
+        scraper = razer_price_scraper()
+        price_data = scraper.scrape_razer_mouse_price(lst_of_mouse)
+        return price_data
+    
+
 if __name__ == "__main__":
     scraper = razer_price_scraper()
     lst_of_mouse = [{

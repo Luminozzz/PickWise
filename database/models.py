@@ -2,7 +2,19 @@ from flask_sqlalchemy import SQLAlchemy
 from enum import Enum
 from flask import Flask
 import os
-db = SQLAlchemy()
+from flask_migrate import Migrate
+from sqlalchemy import MetaData
+
+naming_convention = {
+    "ix": "ix_%(column_0_label)s",
+    "uq": "uq_%(table_name)s_%(column_0_name)s",
+    "ck": "ck_%(table_name)s_%(constraint_name)s",
+    "fk": "fk_%(table_name)s_%(column_0_name)s_%(referred_table_name)s",
+    "pk": "pk_%(table_name)s",
+}
+
+migrate = Migrate()
+db = SQLAlchemy(metadata=MetaData(naming_convention=naming_convention))
 
 class Hand_Fit(Enum):
     LEFT_HANDED = "left-handed"
@@ -80,12 +92,13 @@ class Price_History(db.Model):
     date = db.Column(db.Date, nullable=False)
     currency = db.Column(db.String, nullable=False)
     price = db.Column(db.Float, nullable=False)
-    num_of_stars = db.Column(db.Float, nullable=False)
-    num_of_reviews = db.Column(db.Integer, nullable = False)
+    num_of_stars = db.Column(db.Float, nullable=True)
+    num_of_reviews = db.Column(db.Integer, nullable=True)
     colour = db.Column(db.String, nullable=True)
     store_link = db.Column(db.String, nullable=False)
     store_name = db.Column(db.String, nullable=False)
     sort_by = db.Column(db.Enum(Sort_By))
+
 
 def create_app():
     app = Flask(__name__)
@@ -93,6 +106,7 @@ def create_app():
     app.config['SQLALCHEMY_DATABASE_URI'] = f'sqlite:///{db_path}'
     app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
     db.init_app(app)
+    migrate.init_app(app, db, render_as_batch=True)
     return app
 
 

@@ -1,4 +1,5 @@
 from database.models import db, Mouse,Price_History, Mouse_Skins, create_app
+from sqlalchemy import text
 
 app = create_app()
 
@@ -27,3 +28,4 @@ app = create_app()
 #         print("Deleted!")
 #     else:
 #         print("Mouse not found.")
+
