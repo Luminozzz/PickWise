@@ -289,6 +289,19 @@ button {
   color: var(--text-primary);
 }
 
+.card__brand {
+  display: block;
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--text-muted);
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+}
+
+.card__model {
+  display: block;
+}
+
 .card__desc {
   margin: 0 0 16px;
   font-size: 14px;

@@ -8,6 +8,13 @@ export default function ProductCard({ item }) {
   const description = buildDescription(item)
   const tags = buildTags(item).slice(0, 3)
 
+  // Split the title so the company name sits on its own line above the model.
+  const brand = item.brand_name || ''
+  const model =
+    brand && item.product_name.startsWith(brand)
+      ? item.product_name.slice(brand.length).trim()
+      : item.product_name
+
   const upside = item.upside || 'price'
   const downside = item.downside || 'performance'
 
@@ -26,7 +33,10 @@ export default function ProductCard({ item }) {
         )}
       </div>
 
-      <h3 className="card__name">{item.product_name}</h3>
+      <h3 className="card__name">
+        {brand && <span className="card__brand">{brand}</span>}
+        <span className="card__model">{model}</span>
+      </h3>
       <p className="card__desc">{description}</p>
 
       <div className="card__sides">
