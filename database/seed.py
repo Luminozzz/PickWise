@@ -1,11 +1,10 @@
-from database.models import db, Mouse, Gaming_Mouse, Sort_By, Price_History, Mouse_Skins, Hand_Fit, Ergonomy, Connectivity, create_app
+from database.models import db, Mouse, Gaming_Mouse, Mouse_Connectivity, Sort_By, Price_History, Mouse_Skins, Ergonomy, create_app
 from scrapers import *
-from extractors import *
 import sys
 
 BRAND_EXTRACTORS = {
-    #'Razer': (razer_extractor, razer_scraper),
-    'Logitech': (logitech_extractor, logitech_scraper)
+    #'Razer': razer_scraper,
+    'Logitech': logitech_scraper
 }
 
 OFFICIAL_STORE = {
@@ -15,26 +14,26 @@ OFFICIAL_STORE = {
 app = create_app()
 
 def seed_all():
-    for brand_name, (Extractor_Class, Scraper_Class) in BRAND_EXTRACTORS.items():
-        extractor = Extractor_Class()
+    for brand_name, Scraper_Class in BRAND_EXTRACTORS.items():
         scraper = Scraper_Class()
-        data = extractor.load_csv(scraper.run())
-        existing_names = [name for (name,) in db.session.query(Mouse.product_name).filter_by(brand_name=brand_name).all()]
+        data = scraper.run()
+        existing = {
+            m.product_name: m
+            for m in db.session.query(Mouse).filter_by(brand_name=brand_name).all()
+        }
 
         for product_name, feature in data.items():
             print(product_name)
-            if product_name in existing_names:
-                continue
+            name = product_name.strip()
             battery_life = feature['battery_life']
             polling_rate = feature['polling_rate']
-            mouse = Mouse(
-                product_name = product_name.strip(),
+            mouse_fields = dict(
+                product_name = name,
                 brand_name = feature['brand_name'],
                 link = feature['link'],
                 img_link = feature['img_link'],
                 ergonomy = Ergonomy(feature['ergonomy']),
-                connectivity = Connectivity(feature['connectivity']),
-                hand_fit = Hand_Fit(feature['hand_fit']),
+                left_fit = feature['left_fit'],
                 max_DPI = feature['max_DPI'],
                 weight = feature['weight'],
                 length = feature['length'],
@@ -45,19 +44,39 @@ def seed_all():
                 max_battery_life = battery_life[1],
                 min_polling_rate = polling_rate[0],
                 max_polling_rate = polling_rate[1],
-                other_features = feature['other_features']
+                other_features = feature['other_features'],
             )
-            db.session.add(mouse)
 
-            db.session.flush()
+            mouse = existing.get(name)
 
+            if mouse is not None:
+                for key, value in mouse_fields.items():
+                    setattr(mouse, key, value)
+            
+            else:
+                mouse = Mouse(**mouse_fields)
+                db.session.add(mouse)
+                db.session.flush()
+
+            connectivity = db.session.query(Mouse_Connectivity).filter_by(mouse_id=mouse.id).first()
+
+            if connectivity is None:
+                connectivity = Mouse_Connectivity(mouse_id=mouse.id)
+                db.session.add(connectivity)
+
+            connectivity.bluetooth = feature['bluetooth']
+            connectivity.dongle = feature['dongle']
+            connectivity.wired = feature['wired']
+            
+            gaming = db.session.query(Gaming_Mouse).filter_by(mouse_id=mouse.id).first()
             if feature['tracking_speed'] is not None:
-                gaming = Gaming_Mouse(
-                    mouse_id = mouse.id,
-                    acceleration = feature['max_acceleration'],
-                    tracking_speed = feature['tracking_speed']
-                )
-                db.session.add(gaming)
+                if gaming is None:
+                    gaming = Gaming_Mouse(mouse_id=mouse.id)
+                    db.session.add(gaming)
+                gaming.rgb = feature['rgb']
+                gaming.acceleration = feature['max_acceleration']
+                gaming.tracking_speed = feature['tracking_speed']
+
     db.session.commit()
 
 def add_mouse_skins():
@@ -122,7 +141,6 @@ def add_official_store_product_price():
             db.create_all()
             data = []
             lst_of_mouse_filtered_brand = Mouse.query.filter_by(brand_name = 'Razer').all()
-            #lst_of_mouse = [mouse[0] for mouse in lst_of_mouse_filtered_brand]
 
             for mouse in lst_of_mouse_filtered_brand:
                 mouses = Mouse_Skins.query.filter_by(product_name = mouse.product_name).all()
@@ -141,7 +159,7 @@ def add_official_store_product_price():
                             'colour': None
                         })
             revised_data = scraper.run(data)
-            print(revised_data)
+
             for p in revised_data:
                 mouse = Mouse.query.filter_by(product_name=p['product_name']).first()
                 if mouse:

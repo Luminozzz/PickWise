@@ -91,3 +91,75 @@ CONFIDENCE_LEVEL = 10
 NUMBER_OF_EXTRA_WORDS = 2
 
 KEYWORDS_TO_EXCLUDE = ['grip', 'case', 'casing','skates', 'glides', 'tape', 'supergrip', 'gears']
+
+# =======================
+# FORMAT
+# =======================
+
+# FORMAT_FORM_FACTOR = []
+# FORMAT_PROGRAMMABLE_BUTTONS = []
+# FORMAT_CONNECTIVITY = []
+# FORMAT_BATTERY_LIFE = []
+# FORMAT_MAX_DPI = []
+# FORMAT_TRACKING_SPEED = []
+# FORMAT_MAX_ACCELERATION = []
+# FORMAT_WEIGHT = []
+# FORMAT_SIZE = []
+# FORMAT_POLLING_RATE = []
+# FORMAT_RGB = []
+
+# =======================
+# RAZER
+# =======================
+
+RAZER_FORM_FACTOR = ['form factor']
+RAZER_PROGRAMMABLE_BUTTONS = ['programmable buttons']
+RAZER_CONNECTIVITY = ['connectivity']
+RAZER_BATTERY_LIFE = ['battery life']
+RAZER_MAX_DPI = ["max sensitivity (dpi)"]
+RAZER_TRACKING_SPEED = ["max speed (ips)"]
+RAZER_MAX_ACCELERATION = ["max acceleration (g)"]
+RAZER_WEIGHT = ["weight"]
+RAZER_SIZE = ["size"]
+RAZER_POLLING_RATE = ["polling rate / interval"]
+RAZER_RGB = ['rgb lighting']
+
+# =======================
+# LOGITECH - NORMAL
+# =======================
+
+TITLE_WANTED = ['dimensions', 'technical specifications']
+
+LOGITECH_FORM_FACTOR = ['hand_fit']
+LOGITECH_PROGRAMMABLE_BUTTONS = ['number of buttons', 'programmable controls', 'button']
+LOGITECH_CONNECTIVITY = ['connection type', 'wireless', 'required']
+LOGITECH_BATTERY_LIFE = ['battery life', 'constant motion', 'battery']
+LOGITECH_MAX_DPI = ['minimal and maximal value', 'dpi (minimal and maximal value)', 'sensor resolution', 'nominal value', 'resolution - tracking', 'max value', 'dpi (min/max)', 'dpi', 'resolution']
+LOGITECH_TRACKING_SPEED = ['max. acceleration']
+LOGITECH_MAX_ACCELERATION = ['max. speed']
+LOGITECH_WEIGHT = ['weight']
+LOGITECH_LENGTH = ['height']
+LOGITECH_WIDTH = ['width']
+LOGITECH_HEIGHT = ['depth']
+LOGITECH_POLLING_RATE = ['max report rate', 'wireless report rate', 'usb report rate']
+LOGITECH_RGB = ['rgb']
+
+# =======================
+# LOGITECH - GAMING
+# =======================
+
+TITLE_WANTED = ['dimensions', 'technical specifications']
+
+LOGITECH_GAMING_FORM_FACTOR = ['hand_fit']
+LOGITECH_GAMING_PROGRAMMABLE_BUTTONS = ['number of buttons', 'programmable controls', 'button']
+LOGITECH_GAMING_CONNECTIVITY = ['connection type', 'wireless', 'required', 'name_desc']
+LOGITECH_GAMING_BATTERY_LIFE = ['battery life', 'constant motion', 'battery']
+LOGITECH_GAMING_MAX_DPI = ['minimal and maximal value', 'dpi (minimal and maximal value)', 'sensor resolution', 'nominal value', 'resolution - tracking', 'max value', 'dpi (min/max)', 'dpi', 'resolution']
+LOGITECH_GAMING_TRACKING_SPEED = ['max. acceleration']
+LOGITECH_GAMING_MAX_ACCELERATION = ['max. speed']
+LOGITECH_GAMING_WEIGHT = ['weight']
+LOGITECH_GAMING_LENGTH = ['depth', 'length']
+LOGITECH_GAMING_WIDTH = ['width']
+LOGITECH_GAMING_HEIGHT = ['height']
+LOGITECH_GAMING_POLLING_RATE = ['max report rate', 'wireless report rate', 'usb report rate']
+LOGITECH_GAMING_RGB = ['rgb']

@@ -2,6 +2,17 @@ import math
 from playwright.sync_api import sync_playwright, TimeoutError as PlaywrightTimeoutError
 import random
 
+def scroll_to_bottom(page):
+        last_position = page.evaluate("window.scrollY")
+        while True:
+            page.evaluate(f"window.scrollBy(0, {random.randint(300, 1000)})")
+            page.wait_for_timeout(1300)
+
+            current_position = page.evaluate("window.scrollY")
+            if current_position == last_position:
+                break
+            last_position = current_position
+
 def human_pause(page, min_ms=400, max_ms=1500):
     """Short 'thinking' pause. Use between discrete actions."""
     page.wait_for_timeout(random.randint(min_ms, max_ms))

@@ -103,10 +103,10 @@ class amazon_new_product_price_scraper(scrapy.Spider):
 
                     exact_words = mouse.lower().split()[1:]
 
-                    filter_no_price = [p for p in product_pool if p['price'] is not None]
+                    filter_no_price_and_name_exists = [p for p in product_pool if p['price'] is not None and all(word in p['clean_title_v2'].lower().split() for word in exact_words)]
                     
                     
-                    candidates_for_price = [p for p in filter_no_price if p['score_diff'] <= config.SIMILARITY_SCORE_DIFFERENCE_THRESHOLD and all(word in p['clean_title_v2'].lower().split() for word in exact_words) and all(word not in config.KEYWORDS_TO_EXCLUDE for word in p['clean_title_v2'].lower().split())]
+                    candidates_for_price = [p for p in filter_no_price_and_name_exists if p['score_diff'] <= config.SIMILARITY_SCORE_DIFFERENCE_THRESHOLD  and all(word not in config.KEYWORDS_TO_EXCLUDE for word in p['clean_title_v2'].lower().split())]
                     if not candidates_for_price:
                         print(mouse + ": price not found")
                         continue

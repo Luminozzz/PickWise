@@ -16,20 +16,11 @@ naming_convention = {
 migrate = Migrate()
 db = SQLAlchemy(metadata=MetaData(naming_convention=naming_convention))
 
-class Hand_Fit(Enum):
-    LEFT_HANDED = "left-handed"
-    RIGHT_HANDED = "right-handed"
-    BOTH = "both"
-
 class Ergonomy(Enum):
     ERGONOMIC = "ergonomic"
     SYMMETRICAL = "symmetrical"
     AMBIDEXTROUS = "ambidextrous"
-
-class Connectivity(Enum):
-    STRICTLY_WIRELESS = "strictly wireless"
-    WIRED_AND_WIRELESS = "wired + wireless"
-    STRICTLY_WIRED = "strictly wired"
+    NOT_MENTIONED = "none"
 
 class Sort_By(Enum):
     REVIEW = 'reviews'
@@ -44,9 +35,8 @@ class Mouse(db.Model):
     brand_name = db.Column(db.String, nullable = False)
     link = db.Column(db.String)
     img_link = db.Column(db.String)
-    hand_fit = db.Column(db.Enum(Hand_Fit))
+    left_fit = db.Column(db.Boolean, default = False)
     ergonomy = db.Column(db.Enum(Ergonomy))
-    connectivity = db.Column(db.Enum(Connectivity))
     max_DPI = db.Column(db.Integer)
     length = db.Column(db.Float) # mm
     width = db.Column(db.Float) # mm
@@ -61,18 +51,23 @@ class Mouse(db.Model):
 
     gaming_specs = db.relationship('Gaming_Mouse', backref='mouse', uselist=False)
     skins = db.relationship('Mouse_Skins', backref='mouse', lazy=True)
-    @property
-    def rechargeable(self):
-        if self.connectivity != Connectivity.STRICTLY_WIRED and self.min_battery_life != self.max_battery_life: # 1 month battery life
-            return True
-        return False
+    connectivity = db.relationship('Mouse_Connectivity', backref='mouse', uselist=False)
     
 class Gaming_Mouse(db.Model):
     __tablename__ = "gaming_mouse_specs"
 
     mouse_id = db.Column(db.Integer, db.ForeignKey('mouse_model.id'), primary_key = True)
+    rgb = db.Column(db.Boolean, default=False)
     acceleration = db.Column(db.Integer) # Maximum linear acceleration in G’s before mouse stops working properly.
     tracking_speed = db.Column(db.Integer) # Tracking speed measured in inches per second (IPS)
+
+class Mouse_Connectivity(db.Model):
+    __tablename__ = "mouse_connectivity"
+
+    mouse_id = db.Column(db.Integer, db.ForeignKey('mouse_model.id'), primary_key = True)
+    bluetooth = db.Column(db.Boolean, default = False)
+    dongle = db.Column(db.Boolean, default = False)
+    wired = db.Column(db.Boolean, default = False)
 
 class Mouse_Skins(db.Model):
     __tablename__ = "mouse_skins"
@@ -99,10 +94,9 @@ class Price_History(db.Model):
     store_name = db.Column(db.String, nullable=False)
     sort_by = db.Column(db.Enum(Sort_By))
 
-
 def create_app():
     app = Flask(__name__)
-    db_path = os.path.join(os.path.dirname(__file__), 'mice3.db')
+    db_path = os.path.join(os.path.dirname(__file__), 'mice.db')
     app.config['SQLALCHEMY_DATABASE_URI'] = f'sqlite:///{db_path}'
     app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
     db.init_app(app)
