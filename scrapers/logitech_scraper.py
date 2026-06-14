@@ -70,6 +70,7 @@ class logitech_scraper(scrapy.Spider):
                     
             browser.close()
         print(len(data_mouse_id))
+        print(data_mouse_id)
         return data_mouse_id
     
     def is_blocked(self, page):

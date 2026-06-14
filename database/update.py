@@ -1,13 +1,13 @@
-from database.models import db, Mouse,Price_History, Mouse_Skins, create_app
+from database.models import db, Gaming_Mouse, Mouse,Price_History, Mouse_Skins, create_app, Mouse_Connectivity
 from sqlalchemy import text
 
 app = create_app()
 
 # Update rows
 with app.app_context():
-    mouse = Mouse.query.filter_by(product_name="Logitech Logitech G303 Shroud Edition").first()
+    mouse = Gaming_Mouse.query.filter_by(mouse_id=53).first()
     if mouse:
-        mouse.product_name = 'Logitech G303 Shroud Edition'
+        mouse.rgb = True
         db.session.commit()
         print("Updated!")
     else:
@@ -21,7 +21,7 @@ with app.app_context():
 
 # Remove rows
 # with app.app_context():
-#     mouse = Price_History.query.filter_by(product_name="Razer Cobra Pro").first()
+#     mouse = Mouse.query.filter_by(id=46).first()
 #     if mouse:
 #         db.session.delete(mouse)
 #         db.session.commit()

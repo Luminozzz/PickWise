@@ -1,6 +1,8 @@
 from database.models import db, Mouse, Gaming_Mouse, Mouse_Connectivity, Sort_By, Price_History, Mouse_Skins, Ergonomy, create_app
 from scrapers import *
 import sys
+from database import config
+import re
 
 BRAND_EXTRACTORS = {
     #'Razer': razer_scraper,
@@ -69,7 +71,7 @@ def seed_all():
             connectivity.wired = feature['wired']
             
             gaming = db.session.query(Gaming_Mouse).filter_by(mouse_id=mouse.id).first()
-            if feature['tracking_speed'] is not None:
+            if feature['tracking_speed'] is not None or feature['max_acceleration'] is not None:
                 if gaming is None:
                     gaming = Gaming_Mouse(mouse_id=mouse.id)
                     db.session.add(gaming)
@@ -178,7 +180,6 @@ def add_official_store_product_price():
                     )
                     db.session.add(price)
             db.session.commit()
-
 
 if __name__ == "__main__":
     if sys.argv[1] == 'seed_all':
