@@ -3,6 +3,7 @@ from enum import Enum
 from collections import defaultdict
 from pathlib import Path
 from extractors.parent_extractor import extractor
+import config
 
 class logitech_extractor(extractor):
     
@@ -12,31 +13,30 @@ class logitech_extractor(extractor):
     def extract_feature(self, feature, value):
         feature = feature.lower()
 
-        if feature == "form factor":
+        if feature in config.LOGITECH_FORM_FACTOR:
             return [('hand_fit', self.hand_fit(value)),
                     ('ergonomy', self.ergonomy(value))]
-        elif feature == "number of buttons":
+        elif feature in config.LOGITECH_PROGRAMMABLE_BUTTONS:
             return ('number_of_buttons', self.number_of_buttons(value))
-        elif feature == "connection type":
+        elif feature in config.LOGITECH_CONNECTIVITY:
             return ('connectivity', self.connectivity(value))
-        elif feature == "battery life":
+        elif feature in config.LOGITECH_BATTERY_LIFE:
             return ('battery_life', self.battery_life(value))
-        elif "dpi" in feature or feature == "resolution-tracking":
+        elif feature in config.LOGITECH_MAX_DPI:
             return ('max_DPI', self.max_DPI(value))
-        elif feature == "max. speed":
+        elif feature in config.LOGITECH_TRACKING_SPEED:
             return ('tracking_speed', self.tracking_speed(value))
-        elif feature == "max. acceleration":
+        elif feature in config.LOGITECH_MAX_ACCELERATION:
             return ('max_acceleration', self.max_acceleration(value))
-        elif "weight" in feature:
-            if self.weight(value) > 10:
-                return ('weight', self.weight(value))
-        elif feature == "depth":
-            return ('height', self.height(value))
-        elif feature == 'height':
+        elif feature in config.LOGITECH_WEIGHT:
+            return ('weight', self.weight(value))
+        elif feature in config.LOGITECH_LENGTH:
             return ('length', self.length(value))
-        elif feature == 'width':
+        elif feature in config.LOGITECH_WIDTH:
             return ('width', self.width(value))
-        elif feature == "usb report rate":
+        elif feature in config.LOGITECH_HEIGHT:
+            return ('height', self.height(value))
+        elif feature in config.LOGITECH_POLLING_RATE:
             return ('polling_rate', self.polling_rate(value))
         else:
             return ('other_features', str(feature) + ": " + str(value) + '\n')
@@ -70,9 +70,9 @@ class logitech_extractor(extractor):
         if match_days:
             days = int(match_days.group(1)) * 24
             return (days, days)
-        match_batt = re.findall(r'(\d+)\s*hours?', value, re.IGNORECASE)
+        match_batt = re.findall(r'(\d+)\s*(?:hours?|hrs|h|+\shrs|+)\b', value, re.IGNORECASE)
         if match_batt:
-            hours = [int(match) for match in match_batt]
+            hours = [int(match.group(1)) for match in match_batt]
             return (min(hours), max(hours))
         return (0,0)
 

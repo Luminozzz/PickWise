@@ -78,26 +78,6 @@ class razer_scraper(scrapy.Spider):
                         data[mouse_name] = {
                             'url_id_1': urljoin('https://www.razer.com/', url['href'])
                         }
-                    # mouse_links = soup.find_all('a',href=re.compile(r'/sg-en/gaming-mice/.+/buy'))
-
-                    # # This would extract the entire code out, e.g <a href="blabla" class = "blabla"> blabla </a>
-                    # # I just need the href link
-                    # for m_link in mouse_links:
-                    #     url = urljoin('https://www.razer.com/', m_link['href'])
-                    #     page.goto(url, timeout = 60000)
-                    #     page.wait_for_load_state('domcontentloaded', timeout = 100000)
-                    #     soup = BeautifulSoup(page.content(), 'html.parser')
-                    #     h1 = soup.find(['h1', 'h2'], class_='product-name')
-                    #     if h1 is None:
-                    #         continue
-                    #     inner = h1.find(['a', 'h1'])
-                    #     mouse_name = (inner or h1).text.strip().title()
-                    #     if mouse_name in data:
-                    #         continue
-                    #     url_id_1 = page.url
-                    #     data[mouse_name] = {
-                    #         'url_id_1': url_id_1
-                    #     }
                 finally:
                     page.close()
             browser.close()
@@ -165,9 +145,6 @@ class razer_scraper(scrapy.Spider):
                         soup = BeautifulSoup(page.content(), 'html.parser')
                         seen = set()
                         rows_added = 0
-                        # price_ele = soup.find("span", class_ = ["final-price", "text_white"])
-                        # price = "".join(price_ele.find_all(string=True, recursive=True)).strip()
-                        # value = re.search(r'[\d.]+', price).group()
                         
                         append_data = [{
                             'product_name': name,
@@ -213,18 +190,195 @@ class razer_scraper(scrapy.Spider):
 
         if failed:
             print(f"\n{len(failed)} product(s) failed: {failed}")
+        print(data)
         return data
 
+    def razer_data_cleaning(self, extracted_data):
+        format = {
+            'link': None,
+            'img_link': None,
+            'ergonomy': "none",
+            'left_fit': False,
+            'battery_life': (0,0),
+            'max_DPI': 0,
+            'rgb': False,
+            'tracking_speed': 0,
+            'max_acceleration': 0,
+            'polling_rate': (1000, 1000),
+            'weight': 0.0,
+            'length': 0.0,
+            'width': 0.0,
+            'height': 0.0,
+            'number_of_buttons': 0,
+            'bluetooth': False,
+            'dongle': False,
+            'wired': False,
+            'other_features': None
+        }
+        data = {}
+        for detail in extracted_data:
+            product_name = detail['product_name']
+            feature = detail['feature']
+            value = detail['value']
+
+            if product_name not in data:
+                data[product_name] = format.copy()
+                data[product_name]['brand_name'] = product_name.split(None, 1)[0]
+
+            # default values
+            if feature in ["link", "img_link"]:
+                data[product_name][feature] = value
+                continue
+            result = self.extract_feature(feature, value)
+            if result is None:
+                continue
+            items = result if isinstance(result, list) else [result] # Handle single element or list (dimensions)
+            print(items)
+            for key, val in items:
+                if key == 'other_features':
+                    if data[product_name][key] is not None:
+                        data[product_name][key] = data[product_name][key] + val
+                    else:
+                        data[product_name][key] = val
+                elif isinstance(val, str):
+                    if val != "none":
+                        data[product_name][key] = val
+                elif val > data[product_name][key] and type(val) == type(data[product_name][key]):
+                    data[product_name][key] = val
+        print(data)
+        return data
+
+    def extract_feature(self, feature, value):
+        feature = feature.lower()
+        value = value.lower()
+
+        if feature in config.RAZER_FORM_FACTOR:
+            return [('left_fit', self.left_fit(value)),
+                    ('ergonomy', self.ergonomy(value))]
+        
+        elif feature in config.RAZER_PROGRAMMABLE_BUTTONS:
+            return ('number_of_buttons', self.number_of_buttons(value))
+        
+        elif feature in config.RAZER_CONNECTIVITY:
+            return [('bluetooth', self.bluetooth(value)),
+                    ('dongle', self.dongle(value)),
+                    ('wired', self.wired(value))]
+        
+        elif feature in config.RAZER_BATTERY_LIFE:
+            return ('battery_life', self.battery_life(value))
+        
+        elif feature in config.RAZER_MAX_DPI:
+            return ('max_DPI', self.max_DPI(value))
+        
+        elif feature in config.RAZER_TRACKING_SPEED:
+            return ('tracking_speed', self.tracking_speed(value))
+        
+        elif feature in config.RAZER_MAX_ACCELERATION:
+            return ('max_acceleration', self.max_acceleration(value))
+        
+        elif feature in config.RAZER_WEIGHT:
+            return ('weight', self.weight(value))
+        
+        elif feature in config.RAZER_SIZE:
+            return [('length', self.length(value)), 
+                    ('width', self.width(value)), 
+                    ('height', self.height(value))]
+        
+        elif feature in config.RAZER_POLLING_RATE:
+            return ('polling_rate', self.polling_rate(value))
+        
+        elif feature in config.RAZER_RGB:
+             return ('rgb', self.rgb(value))
+        
+        else:
+            return ('other_features', str(feature) + ": " + str(value) + '\n')
+        
+    def ergonomy(self, value: str) -> str:
+        match = re.search(r'(\w+)-handed\s*(\w+)', value)
+        return match.group(2) if match else "none"
+            
+    def left_fit(self, value: str) -> str:
+        if "left" in value:
+             return True
+        return False
+    
+    def number_of_buttons(self, value):
+        match = re.search(r'(\d+)', value)
+        return int(match.group(1)) if match else 0
+                
+    def bluetooth(self, value):
+        if "bluetooth" in value:
+            return True
+        return False
+            
+    def dongle(self, value):
+        if "wireless" in value:
+            return True
+        return False
+            
+    def wired(self, value):
+        if "wired" in value:
+            return True
+        return False
+
+    def battery_life(self, value: str) -> tuple[int, int]:
+        match_month = re.search(r'(\d+)\s*months?', value, re.IGNORECASE)
+        if match_month:
+            months = int(match_month.group(1)) * 30 * 24
+            return (months, months)
+                
+        match_batt = re.findall(r'(\d+)\s*hours?', value, re.IGNORECASE)
+        if match_batt:
+            hours = [int(match) for match in match_batt]
+            return (min(hours), max(hours))
+        return (0,0)
+    
+    def max_DPI(self, value: str) -> int:
+        match = re.search(r'(\d+)', value)
+        return int(match.group(1)) if match else 0
+    
+    def tracking_speed(self, value: str) -> int:
+        match = re.search(r'(\d+)', value)
+        return int(match.group(1)) if match else 0
+    
+    def max_acceleration(self, value: str) -> int:
+        match = re.search(r'(\d+)', value)
+        return int(match.group(1)) if match else 0
+    
+    def weight(self, value: str) -> float:
+        match = re.search(r'(\d+\.?\d*)\s*g', value)
+        return float(match.group(1)) if match else 0.0
+    
+    def length(self, value: str) -> float:
+        match = re.search(r'length:\s*(\d+\.?\d*)\s*mm', value)
+        return float(match.group(1)) if match else 0.0
+
+    def width(self, value: str) -> float:
+        match = re.search(r'width:\s*(\d+\.?\d*)\s*mm', value)
+        return float(match.group(1)) if match else 0.0
+
+    def height(self, value: str) -> float:
+        match = re.search(r'height:\s*(\d+\.?\d*)\s*mm', value)
+        return float(match.group(1)) if match else 0.0
+    
+    def polling_rate(self, value: str) -> tuple[int, int]:
+        match = re.findall(r'(\d+)\s*Hz', value, re.IGNORECASE)
+        if match:
+            rates = [int(m) for m in match]
+            return (1000, max(rates))
+        return (1000, 1000)
+    
+    def rgb(self, value):
+        return "none" not in value
+        
     def run(self):
         spider = razer_scraper()
         mouse_variation_links = spider.scrape_razer_mouse_variations_links()
         mouse_links = spider.scrape_razer_id_link(mouse_variation_links)
         data = spider.scraper_razer_mouse_details(mouse_links)
-        return data
+        cleaned_data = spider.razer_data_cleaning(data)
+        return cleaned_data
 
 if __name__ == "__main__":
     spider = razer_scraper()
-    mouse_variation_links = spider.scrape_razer_mouse_variations_links()
-    mouse_links = spider.scrape_razer_id_link(mouse_variation_links)
-    data = spider.scraper_razer_mouse_details(mouse_links)
-    print(data)
+    spider.run()

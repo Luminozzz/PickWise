@@ -27,3 +27,20 @@ RAZER_MAX_ACCELERATION = ["max acceleration (g)"]
 RAZER_WEIGHT = ["weight"]
 RAZER_SIZE = ["size"]
 RAZER_POLLING_RATE = ["polling rate / interval"]
+
+# =======================
+# LOGITECH
+# =======================
+
+LOGITECH_FORM_FACTOR = ['handedness']
+LOGITECH_PROGRAMMABLE_BUTTONS = ['number of buttons', 'programmable controls']
+LOGITECH_CONNECTIVITY = ['connection type']
+LOGITECH_BATTERY_LIFE = ['battery life', 'constant motion']
+LOGITECH_MAX_DPI = ['minimal and maximal value', 'dpi (minimal and maximal value)', 'sensor resolution', 'nominal value', 'resolution - tracking']
+LOGITECH_TRACKING_SPEED = ['max. acceleration']
+LOGITECH_MAX_ACCELERATION = ['max. speed']
+LOGITECH_WEIGHT = ['weight']
+LOGITECH_LENGTH = ['height']
+LOGITECH_WIDTH = ['width']
+LOGITECH_HEIGHT = ['depth']
+LOGITECH_POLLING_RATE = ['max report rate', 'wireless rport rate', 'usb report rate']
