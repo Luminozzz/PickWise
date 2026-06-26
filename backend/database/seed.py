@@ -1,7 +1,6 @@
-from database.models import db, Mouse, Gaming_Mouse, Mouse_Connectivity, Sort_By, Price_History, Mouse_Skins, Ergonomy, create_app
+from backend.database.models import db, Mouse, Gaming_Mouse, Mouse_Connectivity, Sort_By, Price_History, Mouse_Skins, Ergonomy, create_app
 from scrapers import *
 import sys
-from database import config
 import re
 
 BRAND_EXTRACTORS = {

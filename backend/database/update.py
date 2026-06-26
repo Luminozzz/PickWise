@@ -1,13 +1,15 @@
-from database.models import db, Gaming_Mouse, Mouse,Price_History, Mouse_Skins, create_app, Mouse_Connectivity
+from backend.database.models import db, Gaming_Mouse, Mouse,Price_History, Mouse_Skins, create_app, Mouse_Connectivity
 from sqlalchemy import text
 
 app = create_app()
 
 # Update rows
 with app.app_context():
-    mouse = Gaming_Mouse.query.filter_by(mouse_id=53).first()
+    mouse = Mouse.query.filter_by(id=54).first()
     if mouse:
-        mouse.rgb = True
+        mouse.length = 117
+        #mouse.width = 75.9
+        mouse.height = 40
         db.session.commit()
         print("Updated!")
     else:
