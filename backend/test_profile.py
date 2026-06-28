@@ -18,6 +18,9 @@ sys.path.insert(0, BACKEND)
 
 from database.models import Preference_Profile, SessionLocal, init_db
 
+from fastapi import HTTPException
+from app.routers.profile import create_profile, get_profile, update_profile
+
 
 def test_model_round_trip():
     init_db()
@@ -33,6 +36,34 @@ def test_model_round_trip():
     print("OK test_model_round_trip")
 
 
+def test_route_round_trip():
+    init_db()
+    created = create_profile({"answers": {"1": "student", "13": "small"}})
+    pid = created["id"]
+    assert pid and created["answers"]["1"] == "student"
+
+    fetched = get_profile(pid)
+    assert fetched["answers"]["13"] == "small"
+
+    updated = update_profile(pid, {"answers": {"1": "office", "13": "large"}})
+    assert updated["answers"]["1"] == "office"
+    assert get_profile(pid)["answers"]["13"] == "large"
+    print("OK test_route_round_trip")
+
+
+def test_unknown_id_404():
+    init_db()
+    for call in (lambda: get_profile("nope"), lambda: update_profile("nope", {"answers": {}})):
+        try:
+            call()
+            assert False, "expected HTTPException"
+        except HTTPException as e:
+            assert e.status_code == 404
+    print("OK test_unknown_id_404")
+
+
 if __name__ == "__main__":
     test_model_round_trip()
+    test_route_round_trip()
+    test_unknown_id_404()
     print("ALL PASSED")

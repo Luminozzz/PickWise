@@ -1,6 +1,7 @@
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
-from app.routers import landing, recommend
+from app.routers import landing, recommend, profile
+from database.models import init_db
 
 app = FastAPI(
     title="Lumino",
@@ -19,5 +20,11 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
+@app.on_event("startup")
+def _ensure_tables():
+    init_db()
+
+
 app.include_router(landing.api_router)
 app.include_router(recommend.api_router)
+app.include_router(profile.api_router)
