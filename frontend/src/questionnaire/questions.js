@@ -11,9 +11,11 @@
 
 export const FLOWS = {
   student: [2, 3, 4],
-  gamer: [5, 6, 7, 8],
+  // Grip (19) + sensitivity/latency (20) are gamer questions. Students who game
+  // regularly run this flow too (Q2 "regularly" jumps into it), so they get them.
+  gamer: [5, 6, 7, 8, 19, 20],
   office: [9, 10, 11, 12],
-  closing: [13, 14, 15, 17, 18], // 16 is a conditional follow-up pushed by Q15
+  closing: [13, 14, 15, 17, 18, 21], // 16 is a conditional follow-up pushed by Q15
 }
 
 export const QUESTIONS = {
@@ -227,6 +229,45 @@ export const QUESTIONS = {
       { label: 'Logitech', value: 'Logitech' },
       { label: 'Razer', value: 'Razer' },
       { label: 'No preference', value: 'none', exclusive: true },
+    ],
+  },
+
+  // ---- Gamer (also students who game) ----------------------------------- //
+  19: {
+    id: 19,
+    section: 'Gamer',
+    type: 'select',
+    text: 'How do you usually hold your mouse?',
+    options: [
+      { label: 'Palm grip — whole hand rests on it', value: 'palm' },
+      { label: 'Claw grip — arched fingers', value: 'claw' },
+      { label: 'Fingertip grip — fingers only', value: 'fingertip' },
+      { label: 'Not sure', value: 'unsure' },
+    ],
+  },
+  20: {
+    id: 20,
+    section: 'Gamer',
+    type: 'select',
+    text: 'How much do you prioritise high sensitivity (DPI) and low latency (polling rate)?',
+    options: [
+      { label: 'A lot — I want top sensitivity and the fastest response', value: 'high' },
+      { label: 'Somewhat', value: 'medium' },
+      { label: 'Not important', value: 'low' },
+    ],
+  },
+
+  // ---- Closing (everyone) ----------------------------------------------- //
+  21: {
+    id: 21,
+    section: 'About you',
+    type: 'select',
+    text: 'Do you have a preferred colour?',
+    options: [
+      { label: 'Black', value: 'Black' },
+      { label: 'White', value: 'White' },
+      { label: 'Pink', value: 'Pink' },
+      { label: 'No preference', value: 'none' },
     ],
   },
 }
