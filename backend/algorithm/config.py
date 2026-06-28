@@ -7,6 +7,11 @@ MEDIUM_HAND_SIZE = 130
 BUDGET = "BUDGET"
 BUDGET_BUFFER = 0.05 # 5%
 
+# Value for money (soft): rewards a lower price within / below budget so that,
+# among mice that clear the budget filter, cheaper ones rank higher.
+VALUE = "VALUE_FOR_MONEY"
+VALUE_FACTOR = 2.0
+
 CONNECTIVITY = "CONNECTIVITY_PREFERENCE"
 
 LEFT_HANDED = "LEFT_HAND"

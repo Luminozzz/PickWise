@@ -51,6 +51,10 @@ CRITERION_LABELS = {
 # "neutral" near-miss rather than a hard "doesn't fit".
 BUDGET_NEUTRAL_BAND = 0.25
 
+# Rules that score but shouldn't surface their own chip — value-for-money feeds
+# the ranking, while the price chip stays the BUDGET 25%-band tag.
+_HIDDEN_FROM_TAGS = {config.VALUE}
+
 
 def _connectivity(wireless_value, wired_too):
     """Combine the wireless preference (Q15) and the wired-too follow-up (Q16)
@@ -332,6 +336,8 @@ def _criteria(facts: dict, mouse, bundle, applicable_rules: list) -> list:
     and the full explanation (used as the tag's tooltip on the frontend)."""
     out = []
     for rule in applicable_rules:
+        if rule.id in _HIDDEN_FROM_TAGS:
+            continue
         status = _criterion_status(facts, mouse, rule, bundle)
         out.append({
             "label": _criterion_label(facts, mouse, rule, status),
@@ -516,6 +522,7 @@ def product_detail(mouse, facts: dict) -> dict:
             "detail": r.explain(facts, mouse),
         }
         for r in applicable
+        if r.id not in _HIDDEN_FROM_TAGS
     ]
 
     return {"details": rows, "criteria": criteria}
