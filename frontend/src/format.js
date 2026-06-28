@@ -9,6 +9,18 @@ export function connectivityLabel(conn) {
   return null
 }
 
+// Abbreviate a count of 1000 or more to a compact "1.5k" label (one decimal,
+// with a trailing ".0" dropped: 1000 -> "1k", 1500 -> "1.5k", 12345 -> "12.3k").
+// Smaller counts stay a plain grouped number.
+export function formatCount(n) {
+  if (n == null) return null
+  const num = Number(n)
+  if (!Number.isFinite(num)) return null
+  if (num < 1000) return num.toLocaleString()
+  const text = (num / 1000).toFixed(1).replace(/\.0$/, '')
+  return `${text}k`
+}
+
 export function formatPrice(price) {
   if (!price || price.amount == null) return null
   const currency = price.currency || '$'

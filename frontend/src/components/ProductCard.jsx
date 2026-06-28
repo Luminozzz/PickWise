@@ -1,6 +1,6 @@
 import { useState } from 'react'
 import { ArrowRight } from './icons.jsx'
-import { buildDescription, buildTags, formatPrice } from '../format.js'
+import { buildDescription, buildTags, formatCount, formatPrice } from '../format.js'
 
 export default function ProductCard({ item }) {
   const [imgFailed, setImgFailed] = useState(false)
@@ -55,7 +55,7 @@ export default function ProductCard({ item }) {
             ★ {Number(rating.stars).toFixed(1)}
             {rating.reviews != null && (
               <span className="card__rating-count">
-                ({Number(rating.reviews).toLocaleString()})
+                ({formatCount(rating.reviews)})
               </span>
             )}
           </span>
