@@ -1,23 +1,31 @@
-export function connectivityLabel(raw) {
-  if (!raw) return null
-  const v = String(raw).toLowerCase()
-  const wireless = v.includes('wireless')
-  const wired = v.includes('wired')
+// Turn the connectivity object ({ bluetooth, dongle, wired }) into a label.
+export function connectivityLabel(conn) {
+  if (!conn) return null
+  const wireless = conn.bluetooth || conn.dongle
+  const wired = conn.wired
   if (wireless && wired) return 'Wired + Wireless'
   if (wireless) return 'Wireless'
   if (wired) return 'Wired'
   return null
 }
 
+export function formatPrice(price) {
+  if (!price || price.amount == null) return null
+  const currency = price.currency || '$'
+  const amount = Number(price.amount)
+  const value = Number.isInteger(amount) ? amount.toString() : amount.toFixed(2)
+  return `${currency}${value}`
+}
+
 export function buildDescription(item) {
   if (item.description) return item.description
   const parts = []
-  if (typeof item.weight === 'number' && item.weight > 0 && item.weight <= 60) {
+  if (typeof item.weight === 'number' && item.weight > 0 && item.weight <= 70) {
     parts.push('Lightweight')
   }
   const conn = connectivityLabel(item.connectivity)
   if (conn) parts.push(conn.toLowerCase())
-  parts.push('gaming mouse')
+  parts.push(item.gaming ? 'gaming mouse' : 'mouse')
   const sentence = parts.join(' ')
   return sentence.charAt(0).toUpperCase() + sentence.slice(1)
 }

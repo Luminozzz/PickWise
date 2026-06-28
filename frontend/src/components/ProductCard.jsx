@@ -1,6 +1,6 @@
 import { useState } from 'react'
-import { ArrowUp, ArrowDown, ArrowRight } from './icons.jsx'
-import { buildDescription, buildTags } from '../format.js'
+import { ArrowRight } from './icons.jsx'
+import { buildDescription, buildTags, formatPrice } from '../format.js'
 
 export default function ProductCard({ item }) {
   const [imgFailed, setImgFailed] = useState(false)
@@ -15,8 +15,9 @@ export default function ProductCard({ item }) {
       ? item.product_name.slice(brand.length).trim()
       : item.product_name
 
-  const upside = item.upside || 'price'
-  const downside = item.downside || 'performance'
+  const price = formatPrice(item.price)
+  const rating = item.rating
+  const colours = item.colours || []
 
   return (
     <article className="card">
@@ -39,16 +40,33 @@ export default function ProductCard({ item }) {
       </h3>
       <p className="card__desc">{description}</p>
 
-      <div className="card__sides">
-        <span className="card__side card__side--up">
-          <ArrowUp />
-          {upside}
+      <div className="card__stats">
+        <span className="card__price">
+          {price ? (
+            <>
+              <span className="card__price-from">from</span> {price}
+            </>
+          ) : (
+            <span className="card__price-na">Price unavailable</span>
+          )}
         </span>
-        <span className="card__side card__side--down">
-          <ArrowDown />
-          {downside}
-        </span>
+        {rating?.stars != null && (
+          <span className="card__rating" title={`${rating.stars} out of 5`}>
+            ★ {Number(rating.stars).toFixed(1)}
+            {rating.reviews != null && (
+              <span className="card__rating-count">
+                ({Number(rating.reviews).toLocaleString()})
+              </span>
+            )}
+          </span>
+        )}
       </div>
+
+      {colours.length > 0 && (
+        <p className="card__colours">
+          {colours.length} colour{colours.length > 1 ? 's' : ''}: {colours.join(', ')}
+        </p>
+      )}
 
       {tags.length > 0 && (
         <div className="card__tags">
