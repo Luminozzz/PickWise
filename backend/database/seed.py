@@ -10,6 +10,7 @@ from database.models import (
     SessionLocal,
 )
 from scrapers import *
+from scrapers.image_utils import razer_primary_render
 import sys
 
 BRAND_EXTRACTORS = {
@@ -113,14 +114,17 @@ def add_mouse_skins():
             session.add(skin)
     session.flush()
 
-    # Prefer the clean transparent product render (a skin) as the main image,
-    # keeping the original marketing shot as the alternate.
+    # Prefer the clean transparent product render as the main image, keeping the
+    # original marketing shot as the alternate. Use a skin render when present,
+    # otherwise fetch the product page's PRIMARY render (covers mice with no
+    # colour variants on the store page).
     for mouse in session.query(Mouse).filter_by(brand_name="Razer").all():
         skin = session.query(Mouse_Skins).filter_by(mouse_id=mouse.id).order_by(Mouse_Skins.id).first()
-        if skin and skin.img_link and mouse.img_link != skin.img_link:
+        render = skin.img_link if (skin and skin.img_link) else razer_primary_render(mouse.link)
+        if render and mouse.img_link != render:
             if not mouse.alt_img_link:
                 mouse.alt_img_link = mouse.img_link
-            mouse.img_link = skin.img_link
+            mouse.img_link = render
 
     session.commit()
 
