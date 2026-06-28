@@ -42,6 +42,7 @@ export default function App() {
   const [view, setView] = useState(viewForPath(window.location.pathname))
   const [answers, setAnswers] = useState(loadAnswers)
   const [profileId, setProfileId] = useState(loadProfileId)
+  const [hydrationError, setHydrationError] = useState(null)
 
   // Keep the in-memory answers and their sessionStorage copy in sync.
   const applyAnswers = (next) => {
@@ -74,6 +75,22 @@ export default function App() {
     return saved
   }
 
+  const retryHydration = () => {
+    setHydrationError(null)
+    const id = profileId
+    if (!id) { navigate('questionnaire'); return }
+    getProfile(id)
+      .then((p) => {
+        if (p) applyAnswers(p.answers || {})
+        else {
+          setProfileId(null)
+          try { localStorage.removeItem(PROFILE_KEY) } catch { /* ignore */ }
+          navigate('questionnaire')
+        }
+      })
+      .catch(() => setHydrationError(true))
+  }
+
   // Keep the view in sync with the browser back/forward buttons.
   useEffect(() => {
     const onPop = () => setView(viewForPath(window.location.pathname))
@@ -99,7 +116,7 @@ export default function App() {
           }
         }
       })
-      .catch(() => {})
+      .catch(() => { if (active) setHydrationError(true) })
     return () => {
       active = false
     }
@@ -126,6 +143,10 @@ export default function App() {
     }
 
     // Returning visitors re-entering the quiz land on their editable profile instead.
+    // Safe to read profileId from the closure here: the only async setProfileId (in saveProfile)
+    // happens on a 'recommendations'/save navigation, which always precedes any later
+    // 'questionnaire' re-entry by a full navigation; and a same-call start-over is covered
+    // by clearedProfile.
     let target = next
     if (target === 'questionnaire' && profileId && !clearedProfile) target = 'profile'
 
@@ -149,13 +170,24 @@ export default function App() {
   if (view === 'questionnaire') {
     return <QuestionnairePage onNavigate={navigate} />
   }
-  if (view === 'recommendations') {
-    if (!answers) return null // redirecting / hydrating
-    return <RecommendationsPage answers={answers} onNavigate={navigate} />
-  }
-  if (view === 'profile') {
-    if (!answers) return null // redirecting / hydrating
-    return <ProfilePage answers={answers} onNavigate={navigate} onSaveProfile={handleSaveProfile} />
+  if (view === 'recommendations' || view === 'profile') {
+    if (!answers) {
+      if (hydrationError) {
+        return (
+          <main className="recs">
+            <div className="recs__state">Couldn't load your saved preferences.</div>
+            <div className="recs__actions">
+              <button className="btn-primary" type="button" onClick={retryHydration}>Try again</button>
+              <button className="quiz__restart" type="button" onClick={() => navigate('questionnaire', null)}>Start fresh</button>
+            </div>
+          </main>
+        )
+      }
+      return null // hydrating / redirecting
+    }
+    return view === 'recommendations'
+      ? <RecommendationsPage answers={answers} onNavigate={navigate} />
+      : <ProfilePage answers={answers} onNavigate={navigate} onSaveProfile={handleSaveProfile} />
   }
   return <LandingPage onNavigate={navigate} />
 }
