@@ -3,7 +3,7 @@ import ProductCardSkeleton from './ProductCardSkeleton.jsx'
 
 const SKELETON_COUNT = 6
 
-export default function Catalogue({ items, loading, error }) {
+export default function Catalogue({ items, loading, error, onNavigate }) {
   return (
     <main className="catalogue">
       {error ? (
@@ -20,7 +20,9 @@ export default function Catalogue({ items, loading, error }) {
             ? Array.from({ length: SKELETON_COUNT }).map((_, i) => (
                 <ProductCardSkeleton key={i} />
               ))
-            : items.map((item) => <ProductCard key={item.id} item={item} />)}
+            : items.map((item) => (
+                <ProductCard key={item.id} item={item} onNavigate={onNavigate} />
+              ))}
         </div>
       )}
     </main>

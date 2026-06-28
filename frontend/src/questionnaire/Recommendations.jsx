@@ -142,6 +142,7 @@ export default function Recommendations({ answers, onNavigate }) {
                 rank={i + 1}
                 isBest={isBest}
                 criteria={r.criteria}
+                onNavigate={onNavigate}
               />
             )
           })}

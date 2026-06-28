@@ -9,7 +9,7 @@ const MAX_SWATCHES = 6
 // Catalogue / card-view product card. In the recommendations card view it also
 // receives `rank`, `isBest`, and `criteria` (the questionnaire fit results),
 // which surface a rank badge and the fit/unfit/neutral tags on the card.
-export default function ProductCard({ item, rank, isBest, criteria }) {
+export default function ProductCard({ item, rank, isBest, criteria, onNavigate }) {
   const [imgFailed, setImgFailed] = useState(false)
 
   const description = buildDescription(item)
@@ -114,7 +114,15 @@ export default function ProductCard({ item, rank, isBest, criteria }) {
           Compare
         </button>
         <span className="card__footer-divider" />
-        {item.link ? (
+        {onNavigate ? (
+          <button
+            className="card__action card__action--primary"
+            type="button"
+            onClick={() => onNavigate('product', item.id)}
+          >
+            View details <ArrowRight size={14} />
+          </button>
+        ) : item.link ? (
           <a
             className="card__action card__action--primary"
             href={item.link}

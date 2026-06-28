@@ -28,7 +28,7 @@ export default function LandingPage({ onNavigate }) {
   return (
     <>
       <Navbar onNavigate={onNavigate} />
-      <Catalogue items={items} loading={loading} error={error} />
+      <Catalogue items={items} loading={loading} error={error} onNavigate={onNavigate} />
     </>
   )
 }

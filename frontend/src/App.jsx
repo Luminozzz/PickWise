@@ -3,6 +3,7 @@ import LandingPage from './pages/LandingPage.jsx'
 import QuestionnairePage from './pages/QuestionnairePage.jsx'
 import RecommendationsPage from './pages/RecommendationsPage.jsx'
 import ProfilePage from './pages/ProfilePage.jsx'
+import ProductPage from './pages/ProductPage.jsx'
 import { createProfile, getProfile, updateProfile } from './api.js'
 
 const PATHS = {
@@ -16,7 +17,13 @@ const viewForPath = (path) => {
   if (path === '/questionnaire') return 'questionnaire'
   if (path === '/recommendations') return 'recommendations'
   if (path === '/profile') return 'profile'
+  if (path.startsWith('/product/')) return 'product'
   return 'landing'
+}
+
+function productIdFromPath(path) {
+  const match = (path || '').match(/^\/product\/(\d+)/)
+  return match ? Number(match[1]) : null
 }
 
 const PROFILE_KEY = 'pickwise_profile_id'
@@ -42,6 +49,7 @@ export default function App() {
   const [view, setView] = useState(viewForPath(window.location.pathname))
   const [answers, setAnswers] = useState(loadAnswers)
   const [profileId, setProfileId] = useState(loadProfileId)
+  const [productId, setProductId] = useState(() => productIdFromPath(window.location.pathname))
   const [hydrationError, setHydrationError] = useState(null)
 
   // Keep the in-memory answers and their sessionStorage copy in sync.
@@ -93,7 +101,11 @@ export default function App() {
 
   // Keep the view in sync with the browser back/forward buttons.
   useEffect(() => {
-    const onPop = () => setView(viewForPath(window.location.pathname))
+    const onPop = () => {
+      const path = window.location.pathname
+      setView(viewForPath(path))
+      setProductId(productIdFromPath(path))
+    }
     window.addEventListener('popstate', onPop)
     return () => window.removeEventListener('popstate', onPop)
   }, [])
@@ -124,6 +136,18 @@ export default function App() {
   }, [])
 
   const navigate = (next, payload) => {
+    // Product detail: the payload is the mouse id, not answers.
+    if (next === 'product') {
+      setProductId(payload)
+      const productPath = `/product/${payload}`
+      if (window.location.pathname !== productPath) {
+        window.history.pushState({}, '', productPath)
+      }
+      setView('product')
+      window.scrollTo(0, 0)
+      return
+    }
+
     let clearedProfile = false
     if (payload !== undefined) {
       applyAnswers(payload)
@@ -188,6 +212,9 @@ export default function App() {
     return view === 'recommendations'
       ? <RecommendationsPage answers={answers} onNavigate={navigate} />
       : <ProfilePage answers={answers} onNavigate={navigate} onSaveProfile={handleSaveProfile} />
+  }
+  if (view === 'product') {
+    return <ProductPage productId={productId} answers={answers} onNavigate={navigate} />
   }
   return <LandingPage onNavigate={navigate} />
 }
