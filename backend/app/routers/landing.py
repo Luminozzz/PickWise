@@ -16,7 +16,8 @@ async def landing_page():
 _ITEMS_SQL = text(
     """
     SELECT
-        m.id, m.product_name, m.brand_name, m.link, m.img_link, m.left_fit,
+        m.id, m.product_name, m.brand_name, m.link, m.img_link, m.alt_img_link,
+        m.left_fit,
         m.ergonomy, m."max_DPI", m.length, m.width, m.height, m.weight,
         m.number_of_buttons, m.min_battery_life, m.max_battery_life,
         m.min_polling_rate, m.max_polling_rate, m.other_features,
@@ -89,6 +90,7 @@ def _shape(row):
         "brand_name": r["brand_name"],
         "link": r["link"],
         "img_link": r["img_link"],
+        "alt_img_link": r["alt_img_link"],
         "left_fit": r["left_fit"],
         "ergonomy": r["ergonomy"],
         "max_DPI": r["max_DPI"],

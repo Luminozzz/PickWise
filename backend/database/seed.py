@@ -111,6 +111,17 @@ def add_mouse_skins():
                 img_link = item['img_link']
             )
             session.add(skin)
+    session.flush()
+
+    # Prefer the clean transparent product render (a skin) as the main image,
+    # keeping the original marketing shot as the alternate.
+    for mouse in session.query(Mouse).filter_by(brand_name="Razer").all():
+        skin = session.query(Mouse_Skins).filter_by(mouse_id=mouse.id).order_by(Mouse_Skins.id).first()
+        if skin and skin.img_link and mouse.img_link != skin.img_link:
+            if not mouse.alt_img_link:
+                mouse.alt_img_link = mouse.img_link
+            mouse.img_link = skin.img_link
+
     session.commit()
 
 def add_new_product_price():
