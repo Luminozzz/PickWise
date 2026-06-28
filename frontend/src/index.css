@@ -678,9 +678,14 @@ button {
 }
 
 .quiz__option.is-selected .quiz__radio {
-  border-color: var(--primary);
-  background: linear-gradient(135deg, var(--primary), var(--secondary));
-  background-clip: padding-box;
+  /* Horizon ring: comet gradient fills the centre, the accent (peach -> pink)
+     forms a warm illuminated border — echoing the navbar's accent line. The
+     double background paints a crisp gradient border with no compositing seam. */
+  border-color: transparent;
+  background:
+    linear-gradient(135deg, var(--primary), var(--secondary)) padding-box,
+    linear-gradient(140deg, var(--accent), var(--accent-soft)) border-box;
+  box-shadow: 0 0 9px -2px var(--accent-soft);
 }
 
 .quiz__option-label {
@@ -699,9 +704,12 @@ button {
 }
 
 .quiz__option.is-selected .quiz__check {
-  border-color: var(--primary);
-  background: linear-gradient(135deg, var(--primary), var(--secondary));
-  background-clip: padding-box;
+  /* Same horizon ring as the radio (see above). */
+  border-color: transparent;
+  background:
+    linear-gradient(135deg, var(--primary), var(--secondary)) padding-box,
+    linear-gradient(140deg, var(--accent), var(--accent-soft)) border-box;
+  box-shadow: 0 0 9px -2px var(--accent-soft);
 }
 
 /* Continue / submit button (slider, range, multiselect) */
