@@ -115,7 +115,9 @@ def _wireless_explanation(facts: dict, mouse) -> str:
 
 
 def _left_hand_compatible(facts: dict, mouse) -> bool:
-    return mouse.left_fit
+    ergonomy = mouse.ergonomy
+    symmetrical = ergonomy == Ergonomy.SYMMETRICAL
+    return mouse.left_fit or symmetrical
 
 def _left_hand_explanation(facts: dict, mouse) -> str:
     if not mouse.left_fit:

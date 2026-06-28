@@ -30,8 +30,8 @@ from . import engine
 
 def recommend(payload: dict, candidates: list) -> dict:
     """
-    payload    — raw key/value data from the frontend form submission.
-    candidates — Mouse ORM objects provided by the API route.
+    payload — data from frontend
+    candidates — Mouse ORM objects
 
     Returns:
       {
@@ -71,19 +71,19 @@ def _build_facts(payload: dict) -> dict:
     budget_max = payload.get("budget_max")
 
     return {
-        "hand_size":          _enum(Hand_Size, payload.get("hand_size")),
-        "wireless":           _enum(Preferability, payload.get("wireless")),
-        "budget":             (float(budget_min), float(budget_max))
-                              if budget_min is not None and budget_max is not None
-                              else None,
-        "left_hand":          payload.get("left_hand"),
-        "user_type":          _enum(User_Type, payload.get("user_type")),
-        "type_of_game":       _enum(Game_Type, payload.get("type_of_game")),
-        "light_weight":       payload.get("light_weight"),
-        "rgb":                payload.get("rgb"),
-        "travel_portability": _enum(Usage, payload.get("travel_portability")),
-        "extra_buttons":      _enum(Preferability, payload.get("extra_buttons")),
-        "hours_worked":       _enum(Usage, payload.get("hours_worked")),
+        "hand_size":_enum(Hand_Size, payload.get("hand_size")),
+        "wireless":_enum(Preferability, payload.get("wireless")),
+        "budget":(float(budget_min), float(budget_max))
+                if budget_min is not None and budget_max is not None
+                else None,
+        "left_hand":payload.get("left_hand"),
+        "user_type":_enum(User_Type, payload.get("user_type")),
+        "type_of_game":_enum(Game_Type, payload.get("type_of_game")),
+        "light_weight":payload.get("light_weight"),
+        "rgb":payload.get("rgb"),
+        "travel_portability":_enum(Usage, payload.get("travel_portability")),
+        "extra_buttons":_enum(Preferability, payload.get("extra_buttons")),
+        "hours_worked":_enum(Usage, payload.get("hours_worked")),
     }
 
 
