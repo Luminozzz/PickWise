@@ -12,6 +12,12 @@ BUDGET_BUFFER = 0.05 # 5%
 VALUE = "VALUE_FOR_MONEY"
 VALUE_FACTOR = 2.0
 
+# Price-vs-performance preference (Q22) scales the value and performance weights.
+PRICE_EMPHASIS = 2.0      # "I value price"        -> value-for-money counts more
+PRICE_DEEMPHASIS = 0.4    # "I value performance"  -> price barely affects the score
+PERF_EMPHASIS = 1.6       # "I value performance"  -> performance specs score higher
+PERF_DEEMPHASIS = 0.5     # "I value price"         -> performance specs score less
+
 CONNECTIVITY = "CONNECTIVITY_PREFERENCE"
 
 LEFT_HANDED = "LEFT_HAND"

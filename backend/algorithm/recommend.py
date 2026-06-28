@@ -142,6 +142,8 @@ def _build_facts(payload: dict) -> dict:
         "hours_worked":       _enum(Usage, payload.get("hours_worked")),
         # preloaded {mouse_id: price} so budget scoring needs no per-mouse query
         "prices":             payload.get("prices"),
+        # Q22: "price" | "performance" | "balance" — scales value vs performance
+        "value_priority":     payload.get("value_priority"),
     }
 
 

@@ -17,7 +17,7 @@ export const FLOWS = {
   // regularly run this flow too (Q2 "regularly" jumps into it), so they get them.
   gamer: [5, 6, 7, 8, 19, 20],
   office: [9, 10, 11, 12],
-  closing: [13, 14, 15, 17, 18, 21], // 16 is a conditional follow-up pushed by Q15
+  closing: [13, 14, 15, 17, 22, 18, 21], // 16 is a conditional follow-up pushed by Q15
 }
 
 export const QUESTIONS = {
@@ -272,6 +272,18 @@ export const QUESTIONS = {
       { label: 'White', value: 'White' },
       { label: 'Pink', value: 'Pink' },
       { label: 'No Preference', value: 'none' },
+    ],
+  },
+
+  22: {
+    id: 22,
+    section: 'About You',
+    type: 'select',
+    text: 'When Price and Performance Pull in Different Directions, Which Do You Value More?',
+    options: [
+      { label: 'Price — I Want the Best Deal', value: 'price' },
+      { label: 'Performance — I Want the Best Specs', value: 'performance' },
+      { label: 'A Balance of Both', value: 'balance' },
     ],
   },
 }

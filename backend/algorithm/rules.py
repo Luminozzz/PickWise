@@ -92,6 +92,27 @@ def _budget_explanation(facts: dict, mouse) -> str:
 # sensitive for tighter budgets. Independent of the hard budget filter and the
 # 25% price-tag band, which are left untouched.
 
+# Q22: "do you value price or performance more?" scales how much the value rule
+# and the performance rules contribute to the score.
+def _value_priority(facts: dict):
+    return facts.get("value_priority")
+
+def _price_emphasis(facts: dict) -> float:
+    priority = _value_priority(facts)
+    if priority == "price":
+        return config.PRICE_EMPHASIS
+    if priority == "performance":
+        return config.PRICE_DEEMPHASIS
+    return 1.0
+
+def _performance_emphasis(facts: dict) -> float:
+    priority = _value_priority(facts)
+    if priority == "performance":
+        return config.PERF_EMPHASIS
+    if priority == "price":
+        return config.PERF_DEEMPHASIS
+    return 1.0
+
 def _value_weight(facts: dict, mouse) -> float:
     budget = facts.get("budget")
     if budget is None:
@@ -103,7 +124,7 @@ def _value_weight(facts: dict, mouse) -> float:
     span = (high - low) or high or 1.0
     relative = (high - price) / span   # +1 at the budget floor, 0 at the ceiling
     relative = max(-1.5, min(1.5, relative))
-    return relative * config.VALUE_FACTOR
+    return relative * config.VALUE_FACTOR * _price_emphasis(facts)
 
 def _value_explanation(facts: dict, mouse) -> str:
     budget = facts.get("budget")
@@ -330,6 +351,9 @@ def _type_of_game_compatibility(facts: dict, mouse) -> bool:
     return True
 
 def _type_of_game_weight(facts: dict, mouse) -> float:
+    return _type_of_game_points(facts, mouse) * _performance_emphasis(facts)
+
+def _type_of_game_points(facts: dict, mouse) -> float:
     type_of_game = facts.get("type_of_game")
     gaming_mouse_specs = mouse.gaming_specs
     if gaming_mouse_specs is not None:
@@ -423,10 +447,12 @@ def _type_of_game_explanation(facts: dict, mouse) -> str:
 def _mouse_weight_weightage(facts: dict, mouse) -> float:
     weight = mouse.weight
     if weight <= config.LIGHT_WEIGHT:
-        return config.MAJOR_FACTOR
+        base = config.MAJOR_FACTOR
     elif weight <= config.MODERATE_WEIGHT:
-        return config.NORMAL_FACTOR
-    return 0.0
+        base = config.NORMAL_FACTOR
+    else:
+        base = 0.0
+    return base * _performance_emphasis(facts)
 
 def _mouse_weight_explanation(facts: dict, mouse) -> str:
     weight = mouse.weight
