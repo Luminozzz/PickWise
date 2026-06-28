@@ -52,8 +52,8 @@ export default function ProfilePage({ answers, onNavigate, onSaveProfile }) {
       <Navbar onNavigate={onNavigate} />
       <main className="profile">
         <header className="profile__head">
-          <span className="quiz__section">Your preferences</span>
-          <h2 className="profile__title">Edit your profile</h2>
+          <span className="quiz__section">Your Preferences</span>
+          <h2 className="profile__title">Edit Your Profile</h2>
           <p className="profile__lead">
             Change anything below and save — we'll re-rank your matches. Switching the
             user type keeps your other answers in the background.
@@ -93,21 +93,21 @@ export default function ProfilePage({ answers, onNavigate, onSaveProfile }) {
             onClick={save}
             disabled={!dirty || status === 'saving'}
           >
-            {status === 'saving' ? 'Saving…' : 'Save changes'}
+            {status === 'saving' ? 'Saving…' : 'Save Changes'}
           </button>
           <button
             className="btn-primary"
             type="button"
             onClick={() => onNavigate('recommendations', draft)}
           >
-            See updated matches <ArrowRight size={14} />
+            See Updated Matches <ArrowRight size={14} />
           </button>
           <button
             className="quiz__restart"
             type="button"
             onClick={() => onNavigate('questionnaire', null)}
           >
-            Retake from scratch
+            Retake From Scratch
           </button>
         </div>
       </main>

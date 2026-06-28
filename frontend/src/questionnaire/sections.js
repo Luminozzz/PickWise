@@ -34,7 +34,7 @@ export function profileSections(answers) {
     about.push(id)
     if (id === 15 && (a[15] === 'yes' || a[15] === 'preferably')) about.push(16)
   }
-  sections.push({ key: 'about', title: 'About you', questionIds: about })
+  sections.push({ key: 'about', title: 'About You', questionIds: about })
 
   return sections
 }

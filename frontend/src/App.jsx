@@ -177,8 +177,8 @@ export default function App() {
           <main className="recs">
             <div className="recs__state">Couldn't load your saved preferences.</div>
             <div className="recs__actions">
-              <button className="btn-primary" type="button" onClick={retryHydration}>Try again</button>
-              <button className="quiz__restart" type="button" onClick={() => navigate('questionnaire', null)}>Start fresh</button>
+              <button className="btn-primary" type="button" onClick={retryHydration}>Try Again</button>
+              <button className="quiz__restart" type="button" onClick={() => navigate('questionnaire', null)}>Start Fresh</button>
             </div>
           </main>
         )
