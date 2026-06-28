@@ -2,3 +2,4 @@
 Extras/
 __pycache__/
 *.pyc
+docs/
