@@ -112,6 +112,9 @@ export default function Recommendations({ answers, onNavigate }) {
       </ol>
 
       <div className="recs__actions">
+        <button className="btn-primary" type="button" onClick={() => onNavigate && onNavigate('profile')}>
+          Edit preferences
+        </button>
         <button className="btn-primary" type="button" onClick={() => onNavigate && onNavigate('landing')}>
           Browse all mice <ArrowRight size={14} />
         </button>

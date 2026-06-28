@@ -1,11 +1,26 @@
 import { User, Grid, Sparkle } from './icons.jsx'
 
+const PROFILE_KEY = 'pickwise_profile_id'
+
 export default function Navbar({ onNavigate }) {
   const go = (view) => (e) => {
     if (onNavigate) {
       e.preventDefault()
       onNavigate(view)
     }
+  }
+
+  // The profile icon opens the saved profile when one exists; otherwise it starts
+  // the questionnaire (which itself redirects to the profile if one is found).
+  const openProfile = (e) => {
+    e.preventDefault()
+    let hasProfile = false
+    try {
+      hasProfile = !!localStorage.getItem(PROFILE_KEY)
+    } catch {
+      /* ignore */
+    }
+    if (onNavigate) onNavigate(hasProfile ? 'profile' : 'questionnaire')
   }
 
   return (
@@ -36,8 +51,9 @@ export default function Navbar({ onNavigate }) {
         <button
           className="navbar__icon-btn navbar__icon-btn--profile"
           type="button"
-          aria-label="Login"
-          title="Login"
+          onClick={openProfile}
+          aria-label="Profile"
+          title="Profile"
         >
           <User />
         </button>
