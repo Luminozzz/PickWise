@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react'
 import { fetchRecommendations } from '../api.js'
-import { ArrowRight } from '../components/icons.jsx'
+import { ArrowRight, ArrowUp, ArrowDown, Minus } from '../components/icons.jsx'
 
 function splitName(item) {
   const brand = item.brand_name || ''
@@ -9,6 +9,37 @@ function splitName(item) {
       ? item.product_name.slice(brand.length).trim()
       : item.product_name
   return { brand, model }
+}
+
+// Three rows of criterion chips: fits (green ↑), misfits (red ↓), and neutral
+// near-misses (yellow –). Empty rows are dropped; each chip's tooltip is the
+// full explanation from the algorithm.
+const TAG_ROWS = [
+  { kind: 'fit', Icon: ArrowUp },
+  { kind: 'unfit', Icon: ArrowDown },
+  { kind: 'neutral', Icon: Minus },
+]
+
+function CriteriaTags({ criteria }) {
+  if (!criteria || criteria.length === 0) return null
+  return (
+    <div className="rec__tags">
+      {TAG_ROWS.map(({ kind, Icon }) => {
+        const items = criteria.filter((c) => c.status === kind)
+        if (items.length === 0) return null
+        return (
+          <div className="rec__tag-row" key={kind}>
+            {items.map((c, i) => (
+              <span className={'rec-tag rec-tag--' + kind} key={c.label + i} title={c.detail}>
+                <Icon size={11} />
+                {c.label}
+              </span>
+            ))}
+          </div>
+        )
+      })}
+    </div>
+  )
 }
 
 export default function Recommendations({ answers, onNavigate }) {
@@ -71,8 +102,6 @@ export default function Recommendations({ answers, onNavigate }) {
           const { brand, model } = splitName(item)
           const matched = item.passed_rules?.length || 0
           const isBest = matched === topMatched && matched > 0
-          // pick a couple of the most useful explanations to surface
-          const why = Object.values(item.explanations || {}).slice(0, 2)
           return (
             <li className="rec" key={item.id}>
               <span className="rec__rank">{i + 1}</span>
@@ -88,13 +117,7 @@ export default function Recommendations({ answers, onNavigate }) {
                   <span className="rec__brand">{brand}</span>
                   <span className="rec__model">{model}</span>
                 </div>
-                {why.length > 0 && (
-                  <ul className="rec__why">
-                    {why.map((text, k) => (
-                      <li key={k}>{text}</li>
-                    ))}
-                  </ul>
-                )}
+                <CriteriaTags criteria={item.criteria} />
               </div>
               <div className="rec__meta">
                 {item.price != null ? (

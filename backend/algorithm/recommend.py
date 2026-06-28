@@ -26,6 +26,29 @@ Office worker Questions:
 from .classes import Hand_Size, Game_Type, Preferability, Connectivity, RuleType, Usage, User_Type
 from .rules import GENERAL_RULES, GAMER_RULES, STUDENT_RULES, OFFICE_RULES
 from . import engine
+from . import config
+
+
+# Short, tag-friendly labels for each rule, surfaced as criterion chips on the
+# recommendations page. Falls back to the raw rule id if a label is missing.
+CRITERION_LABELS = {
+    config.HAND_SIZE: "Hand size",
+    config.CONNECTIVITY: "Connectivity",
+    config.BUDGET: "Price",
+    config.LEFT_HANDED: "Left-handed",
+    config.USER_TYPE: "Usage fit",
+    config.TYPE_OF_GAME: "Game genre",
+    config.LIGHT_WEIGHT_MOUSE: "Lightweight",
+    config.RGB_LIGHTING: "RGB",
+    config.TRAVEL_PORTABILITY: "Portability",
+    config.EXTRA_BUTTONS_REQUIRED: "Extra buttons",
+    config.LONG_HOURS: "Ergonomics",
+    config.SHORTCUT_BUTTONS_REQUIRED: "Shortcut buttons",
+}
+
+# A price outside the budget but within this fraction of the nearer bound is a
+# "neutral" near-miss rather than a hard "doesn't fit".
+BUDGET_NEUTRAL_BAND = 0.25
 
 
 def _connectivity(wireless_value, wired_too):
@@ -131,6 +154,59 @@ def _select_rules(facts: dict) -> list:
     return rules
 
 
+def _budget_status(facts: dict, mouse):
+    """Three-way price fit: inside budget -> fit; outside but within the neutral
+    band -> neutral; further out -> unfit. None when price/budget is unknown."""
+    budget = facts.get("budget")
+    prices = facts.get("prices") or {}
+    price = prices.get(getattr(mouse, "id", None))
+    if budget is None or price is None:
+        return None
+    low, high = budget
+    if low <= price <= high:
+        return "fit"
+    if low * (1 - BUDGET_NEUTRAL_BAND) <= price < low or high < price <= high * (1 + BUDGET_NEUTRAL_BAND):
+        return "neutral"
+    return "unfit"
+
+
+def _criterion_status(facts: dict, mouse, rule, bundle) -> str:
+    """fit | unfit | neutral for one rule against one mouse.
+
+    Hard rules: passed -> fit, failed -> unfit (price gets a neutral near-miss
+    band). Soft rules: positive score -> fit, negative -> unfit, no effect ->
+    neutral.
+    """
+    if rule.id == config.BUDGET:
+        budget_status = _budget_status(facts, mouse)
+        if budget_status is not None:
+            return budget_status
+
+    rule_type = rule.rule_type(facts) if callable(rule.rule_type) else rule.rule_type
+    if rule_type == RuleType.HARD:
+        return "fit" if rule.id in bundle.passed_hard_rules else "unfit"
+
+    points = rule.points(facts, mouse)
+    if points > 0:
+        return "fit"
+    if points < 0:
+        return "unfit"
+    return "neutral"
+
+
+def _criteria(facts: dict, mouse, bundle, applicable_rules: list) -> list:
+    """Per-criterion tags for a mouse: a short label, a fit status, and the full
+    explanation (used as the tag's tooltip on the frontend)."""
+    return [
+        {
+            "label": CRITERION_LABELS.get(rule.id, rule.id),
+            "status": _criterion_status(facts, mouse, rule, bundle),
+            "detail": rule.explain(facts, mouse),
+        }
+        for rule in applicable_rules
+    ]
+
+
 def _format_mice(facts: dict, bundle, applicable_rules: list, soft_rules: list) -> list:
     results = []
 
@@ -146,6 +222,7 @@ def _format_mice(facts: dict, bundle, applicable_rules: list, soft_rules: list) 
             "passed_rules": list(bundle.passed_hard_rules),
             "failed_rules": list(bundle.failed_hard_rules),
             "explanations": explanations,
+            "criteria":     _criteria(facts, mouse, bundle, applicable_rules),
         })
 
     results.sort(key=lambda m: m["score"], reverse=True)

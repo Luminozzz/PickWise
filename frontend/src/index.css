@@ -1340,3 +1340,69 @@ button {
     animation: none;
   }
 }
+
+/* ----------------------------------------- Recommendation criteria tags */
+/* Three rows of pill chips on each result: green ↑ fits, red ↓ misfits,
+   yellow – neutral near-misses. Translucent tints keep them inside the
+   twilight palette while still reading clearly as red / green / yellow. */
+.rec__tags {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  margin-top: 9px;
+}
+
+.rec__tag-row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+}
+
+.rec-tag {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  padding: 3px 10px 3px 7px;
+  border-radius: 999px;
+  border: 1px solid transparent;
+  font-size: 11.5px;
+  font-weight: 600;
+  line-height: 1.4;
+  white-space: nowrap;
+  transition: border-color 0.15s ease, background 0.15s ease;
+}
+
+.rec-tag svg {
+  flex-shrink: 0;
+}
+
+.rec-tag--fit {
+  color: #93f0c9;
+  background: rgba(87, 217, 163, 0.12);
+  border-color: rgba(87, 217, 163, 0.32);
+}
+.rec-tag--fit svg {
+  color: #57d9a3;
+}
+
+.rec-tag--unfit {
+  color: #ff93a4;
+  background: rgba(226, 81, 104, 0.13);
+  border-color: rgba(226, 81, 104, 0.36);
+}
+.rec-tag--unfit svg {
+  color: #e25168;
+}
+
+.rec-tag--neutral {
+  color: #f7d985;
+  background: rgba(232, 193, 94, 0.12);
+  border-color: rgba(232, 193, 94, 0.34);
+}
+.rec-tag--neutral svg {
+  color: #e8c15e;
+}
+
+.rec-tag:hover {
+  border-color: currentColor;
+}
