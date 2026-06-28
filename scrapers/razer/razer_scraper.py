@@ -6,6 +6,7 @@ from urllib.parse import urljoin
 import random
 import time
 from scrapers import config
+from scrapers.image_utils import razer_full_res
 from playwright_stealth import Stealth
 import unicodedata
 
@@ -154,7 +155,7 @@ class razer_scraper(scrapy.Spider):
                         {
                             'product_name': name,
                             'feature': 'img_link',
-                            'value': img_link['src'],
+                            'value': razer_full_res(img_link['src']),
                         }]
                         print(append_data)
                         data.extend(append_data)

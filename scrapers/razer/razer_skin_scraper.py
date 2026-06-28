@@ -6,6 +6,7 @@ from urllib.parse import urljoin
 import random
 import time
 from scrapers import config
+from scrapers.image_utils import razer_full_res
 from playwright_stealth import Stealth
 import unicodedata
 
@@ -88,7 +89,7 @@ class razer_skin_scraper(scrapy.Spider):
                         temp = {
                             'product_name': product_name,
                             'colour': colour,
-                            'img_link': img_link['src']
+                            'img_link': razer_full_res(img_link['src'])
                         }
                         data.append(temp)
                         continue
@@ -98,7 +99,7 @@ class razer_skin_scraper(scrapy.Spider):
                     temp = {
                         'product_name': product_name,
                         'colour': colour,
-                        'img_link': img_link['data-thumbnail']
+                        'img_link': razer_full_res(img_link['data-thumbnail'])
                     }
                     data.append(temp)
             except Exception as e:

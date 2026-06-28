@@ -6,6 +6,7 @@ from urllib.parse import urljoin
 import random
 import time
 from scrapers import config
+from scrapers.image_utils import logitech_hi_res
 from playwright_stealth import Stealth
 from scrapers.human_behaviour import scroll_to_bottom
 
@@ -65,7 +66,7 @@ class logitech_scraper(scrapy.Spider):
                     data_mouse_id[mouse_name] = {'name_desc': None, 'url': None, 'img_link': None, 'left_fit': None}
                     data_mouse_id[mouse_name]['name_desc'] = name_desc
                     data_mouse_id[mouse_name]['url'] = url_mouse
-                    data_mouse_id[mouse_name]['img_link'] = img_link['src']
+                    data_mouse_id[mouse_name]['img_link'] = logitech_hi_res(img_link['src'])
                     data_mouse_id[mouse_name]['hand_fit'] = category
                     
             browser.close()
