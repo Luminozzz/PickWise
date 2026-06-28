@@ -678,7 +678,7 @@ button {
 }
 
 .quiz__option.is-selected .quiz__radio {
-  border-color: transparent;
+  border: 0;
   background: linear-gradient(135deg, var(--primary), var(--secondary));
 }
 
@@ -698,7 +698,7 @@ button {
 }
 
 .quiz__option.is-selected .quiz__check {
-  border-color: transparent;
+  border: 0;
   background: linear-gradient(135deg, var(--primary), var(--secondary));
 }
 
