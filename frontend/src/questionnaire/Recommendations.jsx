@@ -11,9 +11,12 @@ function splitName(item) {
   return { brand, model }
 }
 
-export default function Recommendations({ answers, onRestart, onNavigate }) {
+export default function Recommendations({ answers, onNavigate }) {
   const [data, setData] = useState(null)
   const [error, setError] = useState(null)
+
+  // Retake = clear the profile and return to the questionnaire.
+  const retake = () => onNavigate && onNavigate('questionnaire', null)
 
   useEffect(() => {
     let active = true
@@ -31,7 +34,7 @@ export default function Recommendations({ answers, onRestart, onNavigate }) {
     return (
       <main className="recs">
         <div className="recs__state">Couldn't load recommendations. {error}</div>
-        <button className="quiz__restart" type="button" onClick={onRestart}>
+        <button className="quiz__restart" type="button" onClick={retake}>
           Start over
         </button>
       </main>
@@ -112,7 +115,7 @@ export default function Recommendations({ answers, onRestart, onNavigate }) {
         <button className="btn-primary" type="button" onClick={() => onNavigate && onNavigate('landing')}>
           Browse all mice <ArrowRight size={14} />
         </button>
-        <button className="quiz__restart" type="button" onClick={onRestart}>
+        <button className="quiz__restart" type="button" onClick={retake}>
           Retake quiz
         </button>
       </div>

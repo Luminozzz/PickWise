@@ -1,11 +1,17 @@
 import { useEffect, useRef } from 'react'
 import { useQuestionnaire } from './useQuestionnaire.js'
 import QuestionView from './QuestionView.jsx'
-import Recommendations from './Recommendations.jsx'
 
 export default function Questionnaire({ onNavigate }) {
   const q = useQuestionnaire()
   const headingRef = useRef(null)
+
+  // When the quiz finishes, carry the answers to the recommendations route.
+  useEffect(() => {
+    if (q.done && onNavigate) {
+      onNavigate('recommendations', q.answers)
+    }
+  }, [q.done])
 
   // Move focus to the new question heading each step so screen readers announce
   // it and keyboard context follows along.
@@ -34,7 +40,7 @@ export default function Questionnaire({ onNavigate }) {
   }, [q])
 
   if (q.done) {
-    return <Recommendations answers={q.answers} onRestart={q.restart} onNavigate={onNavigate} />
+    return null // navigating to /recommendations
   }
 
   return (
