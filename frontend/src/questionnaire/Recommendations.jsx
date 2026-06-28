@@ -1,6 +1,18 @@
-import { useEffect, useState } from 'react'
-import { fetchRecommendations } from '../api.js'
-import { ArrowRight, ArrowUp, ArrowDown, Minus } from '../components/icons.jsx'
+import { useEffect, useMemo, useState } from 'react'
+import { fetchItems, fetchRecommendations } from '../api.js'
+import { ArrowRight, Grid, Rows } from '../components/icons.jsx'
+import CriteriaTags from '../components/CriteriaTags.jsx'
+import ProductCard from '../components/ProductCard.jsx'
+
+const VIEW_KEY = 'pickwise_recs_view'
+
+function loadView() {
+  try {
+    return localStorage.getItem(VIEW_KEY) === 'card' ? 'card' : 'listing'
+  } catch {
+    return 'listing'
+  }
+}
 
 function splitName(item) {
   const brand = item.brand_name || ''
@@ -11,43 +23,23 @@ function splitName(item) {
   return { brand, model }
 }
 
-// Three rows of criterion chips: fits (green ↑), misfits (red ↓), and neutral
-// near-misses (yellow –). Empty rows are dropped; each chip's tooltip is the
-// full explanation from the algorithm.
-const TAG_ROWS = [
-  { kind: 'fit', Icon: ArrowUp },
-  { kind: 'unfit', Icon: ArrowDown },
-  { kind: 'neutral', Icon: Minus },
-]
-
-function CriteriaTags({ criteria }) {
-  if (!criteria || criteria.length === 0) return null
-  return (
-    <div className="rec__tags">
-      {TAG_ROWS.map(({ kind, Icon }) => {
-        const items = criteria.filter((c) => c.status === kind)
-        if (items.length === 0) return null
-        return (
-          <div className="rec__tag-row" key={kind}>
-            {items.map((c, i) => (
-              <span className={'rec-tag rec-tag--' + kind} key={c.label + i} title={c.detail}>
-                <Icon size={11} />
-                {c.label}
-              </span>
-            ))}
-          </div>
-        )
-      })}
-    </div>
-  )
-}
-
 export default function Recommendations({ answers, onNavigate }) {
   const [data, setData] = useState(null)
   const [error, setError] = useState(null)
+  const [items, setItems] = useState(null)
+  const [view, setView] = useState(loadView)
 
   // Retake = clear the profile and return to the questionnaire.
   const retake = () => onNavigate && onNavigate('questionnaire', null)
+
+  const changeView = (next) => {
+    setView(next)
+    try {
+      localStorage.setItem(VIEW_KEY, next)
+    } catch {
+      /* ignore storage errors */
+    }
+  }
 
   useEffect(() => {
     let active = true
@@ -60,6 +52,23 @@ export default function Recommendations({ answers, onNavigate }) {
       active = false
     }
   }, [answers])
+
+  // Full catalogue data (specs, colours, rating) for the card view. Fetched once;
+  // merged onto the ranked results by id.
+  useEffect(() => {
+    let active = true
+    fetchItems()
+      .then((d) => active && setItems(Array.isArray(d) ? d : []))
+      .catch(() => active && setItems([]))
+    return () => {
+      active = false
+    }
+  }, [])
+
+  const itemsById = useMemo(
+    () => Object.fromEntries((items || []).map((it) => [it.id, it])),
+    [items],
+  )
 
   if (error) {
     return (
@@ -87,52 +96,94 @@ export default function Recommendations({ answers, onNavigate }) {
   const topMatched = results.length ? results[0].passed_rules?.length || 0 : 0
 
   return (
-    <main className="recs">
+    <main className={'recs' + (view === 'card' ? ' recs--wide' : '')}>
       <header className="recs__head">
-        <span className="quiz__section">Your matches</span>
-        <h2 className="recs__title">Mice ranked for you</h2>
-        <p className="recs__lead">
-          Ordered best-fit first. Lower-ranked options don't match every preference,
-          but are still shown.
-        </p>
+        <div className="recs__head-row">
+          <div>
+            <span className="quiz__section">Your Matches</span>
+            <h2 className="recs__title">Best Mice For You Ranked</h2>
+          </div>
+          <div className="recs__toggle" role="group" aria-label="Result view">
+            <button
+              type="button"
+              className={'recs__toggle-btn' + (view === 'listing' ? ' is-active' : '')}
+              aria-pressed={view === 'listing'}
+              onClick={() => changeView('listing')}
+            >
+              <Rows size={15} /> List
+            </button>
+            <button
+              type="button"
+              className={'recs__toggle-btn' + (view === 'card' ? ' is-active' : '')}
+              aria-pressed={view === 'card'}
+              onClick={() => changeView('card')}
+            >
+              <Grid size={15} /> Cards
+            </button>
+          </div>
+        </div>
       </header>
 
-      <ol className="recs__list">
-        {results.map((item, i) => {
-          const { brand, model } = splitName(item)
-          const matched = item.passed_rules?.length || 0
-          const isBest = matched === topMatched && matched > 0
-          return (
-            <li className="rec" key={item.id}>
-              <span className="rec__rank">{i + 1}</span>
-              <div className="rec__img">
-                {item.img_link ? (
-                  <img src={item.img_link} alt={item.product_name} loading="lazy" />
-                ) : (
-                  <div className="rec__img-fallback" />
-                )}
-              </div>
-              <div className="rec__body">
-                <div className="rec__name">
-                  <span className="rec__brand">{brand}</span>
-                  <span className="rec__model">{model}</span>
+      {view === 'card' ? (
+        <div className="recs__cards">
+          {results.map((r, i) => {
+            const item = itemsById[r.id] || {
+              id: r.id,
+              product_name: r.product_name,
+              brand_name: r.brand_name,
+              img_link: r.img_link,
+            }
+            const matched = r.passed_rules?.length || 0
+            const isBest = matched === topMatched && matched > 0
+            return (
+              <ProductCard
+                key={r.id}
+                item={item}
+                rank={i + 1}
+                isBest={isBest}
+                criteria={r.criteria}
+              />
+            )
+          })}
+        </div>
+      ) : (
+        <ol className="recs__list">
+          {results.map((item, i) => {
+            const { brand, model } = splitName(item)
+            const matched = item.passed_rules?.length || 0
+            const isBest = matched === topMatched && matched > 0
+            return (
+              <li className="rec" key={item.id}>
+                <span className="rec__rank">{i + 1}</span>
+                <div className="rec__img">
+                  {item.img_link ? (
+                    <img src={item.img_link} alt={item.product_name} loading="lazy" />
+                  ) : (
+                    <div className="rec__img-fallback" />
+                  )}
                 </div>
-                <CriteriaTags criteria={item.criteria} />
-              </div>
-              <div className="rec__meta">
-                {item.price != null ? (
-                  <span className="rec__price">${Number(item.price).toFixed(2)}</span>
-                ) : (
-                  <span className="rec__price rec__price--na">—</span>
-                )}
-                <span className={'rec__match' + (isBest ? ' is-best' : '')}>
-                  {isBest ? 'Best match' : `${matched} matched`}
-                </span>
-              </div>
-            </li>
-          )
-        })}
-      </ol>
+                <div className="rec__body">
+                  <div className="rec__name">
+                    <span className="rec__brand">{brand}</span>
+                    <span className="rec__model">{model}</span>
+                  </div>
+                  <CriteriaTags criteria={item.criteria} />
+                </div>
+                <div className="rec__meta">
+                  {item.price != null ? (
+                    <span className="rec__price">${Number(item.price).toFixed(2)}</span>
+                  ) : (
+                    <span className="rec__price rec__price--na">—</span>
+                  )}
+                  <span className={'rec__match' + (isBest ? ' is-best' : '')}>
+                    {isBest ? 'Best match' : `${matched} matched`}
+                  </span>
+                </div>
+              </li>
+            )
+          })}
+        </ol>
+      )}
 
       <div className="recs__actions">
         <button className="btn-primary" type="button" onClick={() => onNavigate && onNavigate('profile')}>

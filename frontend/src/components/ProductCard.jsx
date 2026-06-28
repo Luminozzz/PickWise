@@ -1,8 +1,15 @@
 import { useState } from 'react'
 import { ArrowRight } from './icons.jsx'
 import { buildDescription, buildTags, formatCount, formatPrice } from '../format.js'
+import { colourToHex } from '../colours.js'
+import CriteriaTags from './CriteriaTags.jsx'
 
-export default function ProductCard({ item }) {
+const MAX_SWATCHES = 6
+
+// Catalogue / card-view product card. In the recommendations card view it also
+// receives `rank`, `isBest`, and `criteria` (the questionnaire fit results),
+// which surface a rank badge and the fit/unfit/neutral tags on the card.
+export default function ProductCard({ item, rank, isBest, criteria }) {
   const [imgFailed, setImgFailed] = useState(false)
 
   const description = buildDescription(item)
@@ -11,17 +18,23 @@ export default function ProductCard({ item }) {
   // Split the title so the company name sits on its own line above the model.
   const brand = item.brand_name || ''
   const model =
-    brand && item.product_name.startsWith(brand)
+    brand && item.product_name?.startsWith(brand)
       ? item.product_name.slice(brand.length).trim()
       : item.product_name
 
   const price = formatPrice(item.price)
   const rating = item.rating
   const colours = item.colours || []
+  const hasCriteria = criteria && criteria.length > 0
 
   return (
     <article className="card">
       <div className="card__image">
+        {rank != null && (
+          <span className={'card__rank' + (isBest ? ' card__rank--best' : '')}>
+            {isBest ? 'Best match' : `#${rank}`}
+          </span>
+        )}
         {item.img_link && !imgFailed ? (
           <img
             src={item.img_link}
@@ -54,28 +67,46 @@ export default function ProductCard({ item }) {
           <span className="card__rating" title={`${rating.stars} out of 5`}>
             ★ {Number(rating.stars).toFixed(1)}
             {rating.reviews != null && (
-              <span className="card__rating-count">
-                ({formatCount(rating.reviews)})
-              </span>
+              <span className="card__rating-count">({formatCount(rating.reviews)})</span>
             )}
           </span>
         )}
       </div>
 
       {colours.length > 0 && (
-        <p className="card__colours">
-          {colours.length} colour{colours.length > 1 ? 's' : ''}: {colours.join(', ')}
-        </p>
+        <div
+          className="card__colours"
+          aria-label={`${colours.length} colour${colours.length > 1 ? 's' : ''}: ${colours.join(', ')}`}
+        >
+          {colours.slice(0, MAX_SWATCHES).map((c) => {
+            const hex = colourToHex(c)
+            return (
+              <span
+                key={c}
+                className={'swatch' + (hex ? '' : ' swatch--unknown')}
+                style={hex ? { background: hex } : undefined}
+                title={c}
+              />
+            )
+          })}
+          {colours.length > MAX_SWATCHES && (
+            <span className="card__colours-more">+{colours.length - MAX_SWATCHES}</span>
+          )}
+        </div>
       )}
 
-      {tags.length > 0 && (
-        <div className="card__tags">
-          {tags.map((tag) => (
-            <span className="tag" key={tag}>
-              {tag}
-            </span>
-          ))}
-        </div>
+      {hasCriteria ? (
+        <CriteriaTags criteria={criteria} />
+      ) : (
+        tags.length > 0 && (
+          <div className="card__tags">
+            {tags.map((tag) => (
+              <span className="tag" key={tag}>
+                {tag}
+              </span>
+            ))}
+          </div>
+        )
       )}
 
       <div className="card__footer">

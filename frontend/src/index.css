@@ -262,11 +262,33 @@ button {
 } */
 
 .card__image {
+  position: relative;
   display: flex;
   align-items: center;
   justify-content: center;
   height: 200px;
   margin-bottom: 20px;
+}
+
+/* Rank / best-match badge over the image in the recommendations card view. */
+.card__rank {
+  position: absolute;
+  top: 0;
+  left: 0;
+  z-index: 1;
+  padding: 4px 10px;
+  border-radius: 999px;
+  font-size: 11.5px;
+  font-weight: 700;
+  color: var(--text-secondary);
+  background: var(--surface-raised);
+  border: 1px solid var(--border);
+}
+
+.card__rank--best {
+  color: #061018;
+  background: linear-gradient(135deg, var(--primary), var(--secondary));
+  border-color: transparent;
 }
 
 .card__image img {
@@ -378,13 +400,40 @@ button {
   color: var(--text-muted);
 }
 
+/* Colour options shown as swatch circles rather than text. */
 .card__colours {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 6px;
   margin: 0 0 16px;
-  font-size: 12.5px;
+}
+
+.swatch {
+  width: 16px;
+  height: 16px;
+  border-radius: 50%;
+  border: 1px solid rgba(244, 242, 255, 0.28);
+  box-shadow: inset 0 0 0 1px rgba(7, 6, 23, 0.35);
+}
+
+/* Names we couldn't place get a multi-hue ring rather than a guessed colour. */
+.swatch--unknown {
+  background: conic-gradient(
+    from 0deg,
+    #e2515f,
+    #f2cf63,
+    #5fcaa0,
+    #5cb8ff,
+    #9a6cf0,
+    #e2515f
+  );
+}
+
+.card__colours-more {
+  font-size: 12px;
+  font-weight: 600;
   color: var(--text-muted);
-  overflow: hidden;
-  text-overflow: ellipsis;
-  white-space: nowrap;
 }
 
 .card__tags {
@@ -1439,4 +1488,73 @@ button {
 
 .rec-tag:hover {
   border-color: currentColor;
+}
+
+/* --------------------------------------- Recommendations view toggle + cards */
+/* The card view widens the column so catalogue-style cards have room to grid. */
+.recs--wide {
+  max-width: var(--content-max);
+}
+
+.recs__head-row {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 16px;
+  flex-wrap: wrap;
+}
+
+/* Segmented List / Cards switch. */
+.recs__toggle {
+  display: inline-flex;
+  gap: 2px;
+  padding: 3px;
+  border-radius: 999px;
+  background: var(--surface-raised);
+  border: 1px solid var(--border);
+}
+
+.recs__toggle-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 6px 13px;
+  border: none;
+  border-radius: 999px;
+  background: none;
+  color: var(--text-muted);
+  font-size: 13px;
+  font-weight: 600;
+  transition: color 0.15s ease, background 0.15s ease;
+}
+
+.recs__toggle-btn:hover {
+  color: var(--text-secondary);
+}
+
+.recs__toggle-btn.is-active {
+  color: #061018;
+  background: linear-gradient(135deg, var(--primary), var(--secondary));
+}
+
+.recs__toggle-btn.is-active:hover {
+  color: #061018;
+}
+
+.recs__toggle-btn:focus-visible {
+  outline: none;
+  box-shadow: 0 0 0 2px var(--bg), 0 0 0 4px var(--primary);
+}
+
+.recs__cards {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(260px, 1fr));
+  gap: 22px;
+  margin-top: 4px;
+}
+
+/* In a card, the criterion tags sit above the footer with a little breathing room. */
+.recs__cards .rec__tags {
+  margin-top: 4px;
+  margin-bottom: 16px;
 }
