@@ -16,7 +16,7 @@ export default function Navbar({ onNavigate }) {
       </a>
       <nav className="navbar__nav">
         <button
-          className="navbar__icon-btn navbar__icon-btn--ai"
+          className="navbar__icon-btn"
           type="button"
           onClick={go('questionnaire')}
           aria-label="Find my mouse with AI"

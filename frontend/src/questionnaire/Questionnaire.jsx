@@ -74,6 +74,9 @@ export default function Questionnaire({ onNavigate }) {
         >
           ← Back
         </button>
+        <button className="quiz__skip" type="button" onClick={q.skip}>
+          Skip
+        </button>
       </div>
     </main>
   )

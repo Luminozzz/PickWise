@@ -27,6 +27,8 @@ export const QUESTIONS = {
     text: 'Who will be the main user of this mouse?',
     // Each persona enters its own flow, then the shared closing flow. Closing
     // is pushed first so it runs once, after the persona flow completes.
+    // Skipping enters only the closing flow (general questions, no persona rules).
+    skip: { enter: ['closing'] },
     options: [
       { label: 'A student', value: 'student', enter: ['closing', 'student'] },
       { label: 'A gamer', value: 'gamer', enter: ['closing', 'gamer'] },

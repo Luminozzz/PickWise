@@ -67,20 +67,14 @@ export function Grid({ size = 20 }) {
   )
 }
 
-// AI "sparkle" star — a large four-point star with a small accent star.
+// AI "sparkle" star — a single centred four-point star.
 export function Sparkle({ size = 20 }) {
   return (
     <svg width={size} height={size} viewBox="0 0 24 24" fill="none" aria-hidden="true">
       <path
-        d="M12 3c.4 3.6 1.4 4.6 5 5-3.6.4-4.6 1.4-5 5-.4-3.6-1.4-4.6-5-5 3.6-.4 4.6-1.4 5-5z"
+        d="M12 3c.5 4.5 4 8 9 9-5 1-8.5 4.5-9 9-.5-4.5-4-8-9-9 5-1 8.5-4.5 9-9z"
         stroke="currentColor"
         strokeWidth="2"
-        strokeLinejoin="round"
-      />
-      <path
-        d="M18.5 14c.2 1.8.7 2.3 2.5 2.5-1.8.2-2.3.7-2.5 2.5-.2-1.8-.7-2.3-2.5-2.5 1.8-.2 2.3-.7 2.5-2.5z"
-        stroke="currentColor"
-        strokeWidth="1.6"
         strokeLinejoin="round"
       />
     </svg>

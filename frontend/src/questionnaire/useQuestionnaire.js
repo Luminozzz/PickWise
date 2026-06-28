@@ -50,6 +50,13 @@ export function useQuestionnaire() {
     advance(null, value)
   }
 
+  // Skip: advance without recording an answer, so the fact stays undefined and
+  // its rule never applies (no effect on ranking). A question may define a
+  // `skip` jump for its default continuation (e.g. Q1 still enters the closing flow).
+  function skip() {
+    advance(question && question.skip ? question.skip : null, undefined)
+  }
+
   function back() {
     setState((prev) => {
       if (!prev.history.length) return prev
@@ -77,6 +84,7 @@ export function useQuestionnaire() {
     canBack: state.history.length > 0,
     select,
     submit,
+    skip,
     back,
     restart,
   }
