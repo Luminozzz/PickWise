@@ -453,3 +453,505 @@ button {
   width: 60%;
   margin-top: 16px;
 }
+
+/* ------------------------------------------------------------- Navbar CTA */
+.navbar__cta {
+  background: linear-gradient(135deg, var(--primary), var(--secondary));
+  color: #061018;
+  border: none;
+  border-radius: 999px;
+  padding: 9px 18px;
+  font-size: 14.5px;
+  font-weight: 600;
+  transition: filter 0.15s ease, transform 0.1s ease;
+}
+
+.navbar__cta:hover {
+  filter: brightness(1.08);
+}
+
+.navbar__cta:active {
+  transform: translateY(1px);
+}
+
+/* --------------------------------------------------------- Questionnaire */
+.quiz {
+  position: relative;
+  min-height: calc(100vh - 90px);
+  max-width: 680px;
+  margin: 0 auto;
+  padding: 24px 24px 96px;
+  display: flex;
+  flex-direction: column;
+}
+
+.quiz__progress {
+  height: 4px;
+  width: 100%;
+  background: var(--surface-raised);
+  border-radius: 999px;
+  overflow: hidden;
+  margin-top: 8px;
+}
+
+.quiz__progress-fill {
+  display: block;
+  height: 100%;
+  border-radius: 999px;
+  background: linear-gradient(90deg, var(--primary), var(--secondary), var(--comet-magenta));
+  box-shadow: 0 0 8px var(--secondary);
+  transition: width 0.4s cubic-bezier(0.22, 1, 0.36, 1);
+}
+
+.quiz__panel {
+  flex: 1;
+  display: flex;
+  align-items: flex-start;
+  padding-top: 56px;
+}
+
+.quiz__card {
+  width: 100%;
+  animation: quizInRight 0.34s cubic-bezier(0.22, 1, 0.36, 1) both;
+}
+
+.quiz__card[data-dir='-1'] {
+  animation-name: quizInLeft;
+}
+
+@keyframes quizInRight {
+  from {
+    opacity: 0;
+    transform: translateX(30px);
+  }
+  to {
+    opacity: 1;
+    transform: translateX(0);
+  }
+}
+
+@keyframes quizInLeft {
+  from {
+    opacity: 0;
+    transform: translateX(-30px);
+  }
+  to {
+    opacity: 1;
+    transform: translateX(0);
+  }
+}
+
+.quiz__meta {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  margin-bottom: 14px;
+}
+
+.quiz__section {
+  font-size: 12.5px;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: transparent;
+  background: linear-gradient(90deg, var(--primary), var(--secondary));
+  -webkit-background-clip: text;
+  background-clip: text;
+}
+
+.quiz__step {
+  font-size: 13px;
+  color: var(--text-muted);
+}
+
+.quiz__question {
+  margin: 0 0 26px;
+  font-size: 27px;
+  line-height: 1.25;
+  font-weight: 700;
+  color: var(--text-primary);
+}
+
+.quiz__lead {
+  margin: -14px 0 24px;
+  color: var(--text-secondary);
+  font-size: 15px;
+}
+
+/* Options (select + multiselect) */
+.quiz__options {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.quiz__option {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  width: 100%;
+  text-align: left;
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  padding: 16px 18px;
+  font-size: 16px;
+  color: var(--text-primary);
+  transition: border-color 0.15s ease, background 0.15s ease, transform 0.1s ease;
+}
+
+.quiz__option:hover {
+  border-color: var(--border-strong);
+  background: var(--surface-hover);
+}
+
+.quiz__option:active {
+  transform: translateY(1px);
+}
+
+.quiz__option.is-selected {
+  border-color: var(--primary);
+  background: var(--surface-raised);
+  box-shadow: 0 0 0 1px var(--primary), 0 0 14px -4px var(--secondary);
+}
+
+.quiz__option-key {
+  flex-shrink: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 26px;
+  height: 26px;
+  border-radius: var(--radius-sm);
+  background: var(--surface-raised);
+  border: 1px solid var(--border);
+  font-size: 13px;
+  font-weight: 700;
+  color: var(--text-muted);
+}
+
+.quiz__option.is-selected .quiz__option-key {
+  background: linear-gradient(135deg, var(--primary), var(--secondary));
+  border-color: transparent;
+  color: #061018;
+}
+
+.quiz__option-label {
+  flex: 1;
+}
+
+/* Multiselect check pip */
+.quiz__check {
+  flex-shrink: 0;
+  width: 20px;
+  height: 20px;
+  border-radius: 6px;
+  border: 1px solid var(--border-strong);
+  background: var(--surface-raised);
+  transition: background 0.15s ease, border-color 0.15s ease;
+}
+
+.quiz__option.is-selected .quiz__check {
+  border-color: transparent;
+  background: linear-gradient(135deg, var(--primary), var(--secondary));
+}
+
+/* Continue / submit button (slider, range, multiselect) */
+.quiz__continue {
+  margin-top: 26px;
+  width: 100%;
+  padding: 13px 18px;
+  font-size: 15.5px;
+}
+
+/* Single slider */
+.quiz__slider {
+  display: flex;
+  flex-direction: column;
+}
+
+.quiz__slider-value {
+  font-size: 40px;
+  font-weight: 700;
+  color: var(--text-primary);
+  text-align: center;
+  margin-bottom: 18px;
+}
+
+.quiz__slider-unit {
+  font-size: 20px;
+  color: var(--text-muted);
+  margin-left: 2px;
+}
+
+.quiz__scale {
+  display: flex;
+  justify-content: space-between;
+  margin-top: 10px;
+  font-size: 12.5px;
+  color: var(--text-muted);
+}
+
+/* Range inputs (shared look) */
+.quiz__range-input {
+  -webkit-appearance: none;
+  appearance: none;
+  width: 100%;
+  height: 6px;
+  border-radius: 999px;
+  background: var(--surface-raised);
+  outline: none;
+}
+
+.quiz__range-input--single {
+  background: linear-gradient(90deg, var(--primary), var(--secondary));
+}
+
+.quiz__range-input::-webkit-slider-thumb {
+  -webkit-appearance: none;
+  appearance: none;
+  width: 24px;
+  height: 24px;
+  border-radius: 50%;
+  background: var(--text-primary);
+  border: 3px solid var(--primary);
+  cursor: pointer;
+  box-shadow: 0 0 10px -2px var(--secondary);
+}
+
+.quiz__range-input::-moz-range-thumb {
+  width: 24px;
+  height: 24px;
+  border-radius: 50%;
+  background: var(--text-primary);
+  border: 3px solid var(--primary);
+  cursor: pointer;
+}
+
+/* Dual-thumb budget range */
+.quiz__range-wrap {
+  display: flex;
+  flex-direction: column;
+}
+
+.quiz__range-values {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 12px;
+  margin-bottom: 22px;
+}
+
+.quiz__range-chip {
+  font-size: 22px;
+  font-weight: 700;
+  color: var(--text-primary);
+  background: var(--surface-raised);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-sm);
+  padding: 6px 14px;
+}
+
+.quiz__range-dash {
+  color: var(--text-muted);
+  font-size: 14px;
+}
+
+.quiz__range-track {
+  position: relative;
+  height: 22px;
+}
+
+.quiz__range-fill {
+  position: absolute;
+  top: 8px;
+  height: 6px;
+  border-radius: 999px;
+  background: linear-gradient(90deg, var(--primary), var(--secondary));
+}
+
+/* Two range inputs stacked; only the thumbs are interactive so both drag. */
+.quiz__range-track .quiz__range-input {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  margin: 0;
+  background: none;
+  pointer-events: none;
+}
+
+.quiz__range-track .quiz__range-input::-webkit-slider-thumb {
+  pointer-events: auto;
+}
+
+.quiz__range-track .quiz__range-input::-moz-range-thumb {
+  pointer-events: auto;
+}
+
+/* Footer */
+.quiz__footer {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-top: 28px;
+}
+
+.quiz__back {
+  background: none;
+  border: 1px solid var(--border);
+  border-radius: var(--radius-sm);
+  padding: 8px 16px;
+  font-size: 14px;
+  color: var(--text-secondary);
+  transition: color 0.15s ease, border-color 0.15s ease;
+}
+
+.quiz__back:hover:not(:disabled) {
+  color: var(--text-primary);
+  border-color: var(--border-strong);
+}
+
+.quiz__back:disabled {
+  opacity: 0.4;
+  cursor: default;
+}
+
+.quiz__hint {
+  font-size: 12.5px;
+  color: var(--text-muted);
+}
+
+/* Summary */
+.quiz__card--summary {
+  animation: quizInRight 0.34s cubic-bezier(0.22, 1, 0.36, 1) both;
+}
+
+.quiz__summary {
+  list-style: none;
+  margin: 22px 0 0;
+  padding: 0;
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  overflow: hidden;
+}
+
+.quiz__summary-row {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 18px;
+  padding: 13px 18px;
+  border-top: 1px solid var(--border);
+  font-size: 14.5px;
+}
+
+.quiz__summary-row:first-child {
+  border-top: none;
+}
+
+.quiz__summary-q {
+  color: var(--text-secondary);
+  flex: 1;
+}
+
+.quiz__summary-a {
+  color: var(--text-primary);
+  font-weight: 600;
+  text-align: right;
+  white-space: nowrap;
+}
+
+.quiz__done-actions {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  margin-top: 26px;
+}
+
+.quiz__done-actions .btn-primary {
+  padding: 12px 22px;
+}
+
+.quiz__restart {
+  background: none;
+  border: none;
+  padding: 0;
+  font-size: 14px;
+  color: var(--text-muted);
+  transition: color 0.15s ease;
+}
+
+.quiz__restart:hover {
+  color: var(--text-secondary);
+}
+
+@media (max-width: 560px) {
+  .quiz__summary-a {
+    white-space: normal;
+  }
+  .quiz__question {
+    font-size: 23px;
+  }
+}
+
+/* ----------------------------------------------- Questionnaire a11y refinements */
+
+/* Visible keyboard focus rings on the dark palette (double ring stays visible
+   over both --surface and the selected/gradient backgrounds). */
+.quiz__option:focus-visible,
+.quiz__continue:focus-visible,
+.quiz__back:focus-visible,
+.quiz__restart:focus-visible,
+.navbar__cta:focus-visible {
+  outline: none;
+  box-shadow: 0 0 0 2px var(--bg), 0 0 0 4px var(--primary);
+}
+
+/* Focus the slider thumbs visibly (native outline was removed). */
+.quiz__range-input:focus-visible::-webkit-slider-thumb {
+  box-shadow: 0 0 0 3px var(--primary), 0 0 10px -2px var(--secondary);
+}
+
+.quiz__range-input:focus-visible::-moz-range-thumb {
+  box-shadow: 0 0 0 3px var(--primary);
+}
+
+/* The question heading is focused programmatically each step (for screen
+   readers); suppress the resulting ring since it isn't keyboard-driven. */
+.quiz__question:focus {
+  outline: none;
+}
+
+/* Comfortable touch targets for the small text buttons. */
+.quiz__back {
+  min-height: 40px;
+}
+
+.quiz__restart {
+  min-height: 40px;
+  padding: 10px 8px;
+}
+
+/* Respect users who prefer reduced motion: keep a gentle fade, drop slides. */
+@media (prefers-reduced-motion: reduce) {
+  .quiz__card,
+  .quiz__card--summary {
+    animation-name: quizFade;
+  }
+  .quiz__progress-fill {
+    transition: none;
+  }
+  .skeleton {
+    animation: none;
+  }
+}
+
+@keyframes quizFade {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}

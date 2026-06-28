@@ -1,18 +1,29 @@
 import { User, Grid } from './icons.jsx'
 
-export default function Navbar() {
+export default function Navbar({ onNavigate }) {
+  const go = (view) => (e) => {
+    if (onNavigate) {
+      e.preventDefault()
+      onNavigate(view)
+    }
+  }
+
   return (
     <header className="navbar">
-      <a className="navbar__brand" href="/">
+      <a className="navbar__brand" href="/" onClick={go('landing')}>
         <img className="navbar__logo" src="/logo.png" alt="PickWise logo" />
         PickWise
       </a>
       <nav className="navbar__nav">
+        <button className="navbar__cta" type="button" onClick={go('questionnaire')}>
+          Find my mouse
+        </button>
         <a
           className="navbar__icon-btn"
           href="/catalogue"
           aria-label="Catalogue"
           title="Catalogue"
+          onClick={go('landing')}
         >
           <Grid />
         </a>
