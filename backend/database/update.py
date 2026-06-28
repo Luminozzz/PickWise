@@ -1,31 +1,34 @@
-from database.models import db, Gaming_Mouse, Mouse,Price_History, Mouse_Skins, create_app, Mouse_Connectivity
-from sqlalchemy import text
+from database.models import (
+    Gaming_Mouse,
+    Mouse,
+    Price_History,
+    Mouse_Skins,
+    Mouse_Connectivity,
+    SessionLocal,
+    engine,
+)
 
-app = create_app()
+session = SessionLocal()
 
 # Update rows
-with app.app_context():
-    mouse = Gaming_Mouse.query.filter_by(mouse_id=53).first()
-    if mouse:
-        mouse.rgb = True
-        db.session.commit()
-        print("Updated!")
-    else:
-        print("Mouse not found.")
+mouse = session.query(Gaming_Mouse).filter_by(mouse_id=53).first()
+if mouse:
+    mouse.rgb = True
+    session.commit()
+    print("Updated!")
+else:
+    print("Mouse not found.")
 
 
 # Drop Tables
-# with app.app_context():
-#     Price_History.__table__.drop(db.engine)
-#     Price_History.__table__.create(db.engine)
+# Price_History.__table__.drop(engine)
+# Price_History.__table__.create(engine)
 
 # Remove rows
-# with app.app_context():
-#     mouse = Mouse.query.filter_by(id=46).first()
-#     if mouse:
-#         db.session.delete(mouse)
-#         db.session.commit()
-#         print("Deleted!")
-#     else:
-#         print("Mouse not found.")
-
+# mouse = session.query(Mouse).filter_by(id=46).first()
+# if mouse:
+#     session.delete(mouse)
+#     session.commit()
+#     print("Deleted!")
+# else:
+#     print("Mouse not found.")
