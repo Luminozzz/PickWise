@@ -316,7 +316,7 @@ class logitech_scraper(scrapy.Spider):
                 dongle = self.dongle(value)
                 wired = self.wired(value)
                 if not (bluetooth or dongle or wired):
-                    return ('other_features', f"{feature}: {value}\n")
+                    wired = True  # default to wired when nothing is detected
                 return [('bluetooth', bluetooth),
                         ('dongle', dongle),
                         ('wired', wired)]
@@ -356,7 +356,7 @@ class logitech_scraper(scrapy.Spider):
                 dongle = self.dongle(value)
                 wired = self.wired(value)
                 if not (bluetooth or dongle or wired):
-                    return ('other_features', f"{feature}: {value}\n")
+                    wired = True  # default to wired when nothing is detected
                 return [('bluetooth', bluetooth),
                         ('dongle', dongle),
                         ('wired', wired)]

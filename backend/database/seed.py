@@ -77,6 +77,9 @@ def seed_all():
             connectivity.bluetooth = feature['bluetooth']
             connectivity.dongle = feature['dongle']
             connectivity.wired = feature['wired']
+            # Every mouse is at least wired: default when nothing was detected.
+            if not (connectivity.bluetooth or connectivity.dongle or connectivity.wired):
+                connectivity.wired = True
 
             gaming = session.query(Gaming_Mouse).filter_by(mouse_id=mouse.id).first()
             if feature['tracking_speed'] is not None or feature['max_acceleration'] is not None:

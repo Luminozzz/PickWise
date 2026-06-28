@@ -10,6 +10,7 @@ from sqlalchemy import (
     Date,
     Enum as SAEnum,
     ForeignKey,
+    UniqueConstraint,
     create_engine,
 )
 from sqlalchemy.orm import relationship, declarative_base, sessionmaker
@@ -96,6 +97,18 @@ class Mouse_Skins(Base):
 
 class Price_History(Base):
     __tablename__ = "price_history"
+    # One price per (mouse, store, colour, day). NULLS NOT DISTINCT so rows with
+    # a NULL colour still can't duplicate (Postgres 15+).
+    __table_args__ = (
+        UniqueConstraint(
+            "mouse_id",
+            "store_name",
+            "colour",
+            "date",
+            name="uq_price_history_mouse_store_colour_date",
+            postgresql_nulls_not_distinct=True,
+        ),
+    )
 
     id = Column(Integer, primary_key=True, autoincrement=True)
     mouse_id = Column(Integer, ForeignKey("mouse_model.id"), nullable=False)
