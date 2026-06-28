@@ -75,12 +75,16 @@ class razer_skin_scraper(scrapy.Spider):
                 for mouse in colour_data:
                     colour = mouse['colour']
                     product_name = mouse['product_name']
+                    # Find the card whose title matches this product. If none
+                    # matches, skip — never fall back to a stale/last div, which
+                    # would attribute another product's image to this mouse.
+                    spec_div = None
                     for div in all_the_divs:
-                        spec_div = div
-                        title = spec_div.find('h3', string = product_name)
-                        if title is None:
-                            continue
-                        break
+                        if div.find('h3', string = product_name) is not None:
+                            spec_div = div
+                            break
+                    if spec_div is None:
+                        continue
                     colour_options = spec_div.find('ul', class_ = ['options-colordesign', 'options'])
                     if colour_options is None:
                         img_link = spec_div.find('div', class_ = 'thumbnail-holder').find('img')
