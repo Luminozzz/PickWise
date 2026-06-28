@@ -60,15 +60,23 @@ export default function ProfilePage({ answers, onNavigate, onSaveProfile }) {
           </p>
         </header>
 
-        {/* Persona section — the user-type select swaps which fields show. */}
+        {/* User — the persona selector lives in its own section. */}
         <section className="profile__section">
-          <h3 className="profile__section-title">{persona ? persona.title : 'Who is this for?'}</h3>
+          <h3 className="profile__section-title">User</h3>
           <div className="profile__field">
             <span className="profile__field-label">{USER_TYPE_Q.text}</span>
             <ProfileField question={USER_TYPE_Q} value={draft[1]} onChange={(v) => change(1, v)} />
           </div>
-          {persona && persona.questionIds.map(renderField)}
         </section>
+
+        {/* Persona-specific questions — keyed by persona so the section
+            re-animates whenever the user type changes. */}
+        {persona && (
+          <section className="profile__section profile__section--persona" key={persona.key}>
+            <h3 className="profile__section-title">{persona.title}</h3>
+            {persona.questionIds.map(renderField)}
+          </section>
+        )}
 
         {/* About you — shown for everyone. */}
         <section className="profile__section">
