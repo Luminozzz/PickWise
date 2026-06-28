@@ -1,4 +1,4 @@
-from .classes import Rule, RuleType, Hand_Size, Preferability, Game_Type, Usage, User_Type
+from .classes import Rule, RuleType, Hand_Size, Preferability, Connectivity, Game_Type, Usage, User_Type
 from . import config
 from database.models import Ergonomy, Price_History, SessionLocal
 
@@ -53,6 +53,15 @@ def _hand_size_explanation(facts: dict, mouse) -> str:
 
 
 # Filter Price_History to the latest price entry per mouse, used for budget check
+def _price_of(facts: dict, mouse):
+    """Latest price for a mouse. Prefers a preloaded facts['prices'] map (fast,
+    one query for all mice); falls back to a direct lookup if absent."""
+    prices = facts.get("prices")
+    if prices is not None:
+        return prices.get(mouse.id)
+    row = _latest_price(mouse)
+    return row.price if row is not None else None
+
 def _budget_compatible(facts: dict, mouse) -> bool:
     budget: tuple[float, float] = facts.get("budget")
     budget_midpoint = (budget[0] + budget[1]) / 2
@@ -60,18 +69,16 @@ def _budget_compatible(facts: dict, mouse) -> bool:
         budget[0] - budget_midpoint * (1 - config.BUDGET_BUFFER),
         budget[1] + budget_midpoint * (1 - config.BUDGET_BUFFER),
     )
-    latest = _latest_price(mouse)
-    if latest is None:
+    mouse_price = _price_of(facts, mouse)
+    if mouse_price is None:
         return False
-    mouse_price = latest.price
     return budget_buffer[0] <= mouse_price <= budget_buffer[1]
 
 def _budget_explanation(facts: dict, mouse) -> str:
     budget: tuple[float, float] = facts.get("budget")
-    latest = _latest_price(mouse)
-    if latest is None:
+    price = _price_of(facts, mouse)
+    if price is None:
         return "No pricing information is available for this mouse"
-    price = latest.price
     if price > budget[1]:
         return f"Priced at ${price:.2f}, this mouse exceeds your maximum budget of ${budget[1]:.2f}"
     if price < budget[0]:
@@ -79,39 +86,81 @@ def _budget_explanation(facts: dict, mouse) -> str:
     return f"Priced at ${price:.2f}, this mouse fits within your budget of ${budget[0]:.2f}–${budget[1]:.2f}"
 
 
-def _wireless_compatible(facts: dict, mouse) -> bool:
-    preference = facts.get("wireless")
+_CONN_LABEL = {
+    Connectivity.STRICTLY_WIRELESS: "strictly wireless",
+    Connectivity.BOTH: "wired + wireless",
+    Connectivity.STRICTLY_WIRED: "strictly wired",
+}
+
+
+def _mouse_conn_type(mouse):
+    """The mouse's connectivity type from its boolean flags, or None."""
     conn = mouse.connectivity
-    is_wireless = conn is not None and (conn.bluetooth or conn.dongle)
-    if preference == Preferability.YES:
-        return is_wireless
+    if conn is None:
+        return None
+    wireless = bool(conn.bluetooth or conn.dongle)
+    wired = bool(conn.wired)
+    if wireless and wired:
+        return Connectivity.BOTH
+    if wireless:
+        return Connectivity.STRICTLY_WIRELESS
+    if wired:
+        return Connectivity.STRICTLY_WIRED
+    return None
+
+
+def _conn_acceptable(desired, actual) -> bool:
+    """Whether a mouse's connectivity type satisfies the desired type. A `both`
+    mouse satisfies a wireless- or wired-only wish (it can do either)."""
+    if actual is None:
+        return False
+    if desired == Connectivity.BOTH:
+        return actual == Connectivity.BOTH
+    if desired == Connectivity.STRICTLY_WIRELESS:
+        return actual in (Connectivity.STRICTLY_WIRELESS, Connectivity.BOTH)
+    if desired == Connectivity.STRICTLY_WIRED:
+        return actual in (Connectivity.STRICTLY_WIRED, Connectivity.BOTH)
     return True
 
-def _wireless_weight(facts: dict, mouse) -> float:
-    preference = facts.get("wireless")
-    conn = mouse.connectivity
-    is_wireless = conn is not None and (conn.bluetooth or conn.dongle)
-    if preference == Preferability.YES or preference == Preferability.NO:
-        return 0.0
-    elif preference == Preferability.PREFERABLY:
-        return config.NORMAL_FACTOR if is_wireless else config.NEGATIVE_NORMAL_FACTOR
 
-def _wireless_explanation(facts: dict, mouse) -> str:
-    preference = facts.get("wireless")
-    conn = mouse.connectivity
-    is_wireless = conn is not None and (conn.bluetooth or conn.dongle)
-    conn_type = "Bluetooth" if (conn and conn.bluetooth) else ("wireless dongle" if (conn and conn.dongle) else "wired")
-    if preference == Preferability.YES:
-        if not is_wireless:
-            return "You need a wireless mouse, but this is a wired mouse"
-        return f"This mouse is wireless ({conn_type}), matching your requirement"
-    if preference == Preferability.NO:
-        return f"Connectivity is wired — no wireless preference required"
-    if preference == Preferability.PREFERABLY:
-        if is_wireless:
-            return f"This mouse is wireless ({conn_type}), aligning with your preference"
-        return "You prefer wireless — this wired mouse scores slightly lower on connectivity"
-    return "Connectivity matches your preference"
+def _connectivity_rule_type(facts: dict) -> RuleType:
+    # A definitive choice (yes/no on wireless) filters; "preferably" only scores.
+    return RuleType.HARD if facts.get("connectivity_strict") else RuleType.SOFT
+
+
+def _connectivity_compatible(facts: dict, mouse) -> bool:
+    desired = facts.get("connectivity")
+    if desired is None:
+        return True
+    return _conn_acceptable(desired, _mouse_conn_type(mouse))
+
+
+def _connectivity_weight(facts: dict, mouse) -> float:
+    desired = facts.get("connectivity")
+    if desired is None:
+        return 0.0
+    actual = _mouse_conn_type(mouse)
+    if actual is None:
+        return config.NEGATIVE_NORMAL_FACTOR
+    if actual == desired:
+        return config.MAJOR_FACTOR          # exact product-type match
+    if _conn_acceptable(desired, actual):
+        return config.MINOR_FACTOR           # usable but not the ideal type
+    return config.NEGATIVE_MAJOR_FACTOR       # wrong type
+
+
+def _connectivity_explanation(facts: dict, mouse) -> str:
+    desired = facts.get("connectivity")
+    actual = _mouse_conn_type(mouse)
+    if actual is None:
+        return "No connectivity information is available for this mouse"
+    want = _CONN_LABEL.get(desired, "your preference")
+    have = _CONN_LABEL.get(actual, "unknown")
+    if actual == desired:
+        return f"This is a {have} mouse, exactly the connectivity you want"
+    if _conn_acceptable(desired, actual):
+        return f"This is a {have} mouse — it covers your {want} need, though it isn't strictly that type"
+    return f"This is a {have} mouse, but you want {want}"
 
 
 def _left_hand_compatible(facts: dict, mouse) -> bool:
@@ -121,12 +170,6 @@ def _left_hand_explanation(facts: dict, mouse) -> str:
     if not mouse.left_fit:
         return "This mouse is shaped for right-handed use and may be uncomfortable for left-handed users"
     return "This mouse is compatible with left-handed use"
-
-
-def _connectivity_rule_type(facts: dict) -> RuleType:
-    if facts.get("connectivity") == Preferability.YES:
-        return RuleType.HARD
-    return RuleType.SOFT
 
 
 def _type_of_user_weight(facts: dict, mouse) -> float:
@@ -194,11 +237,11 @@ GENERAL_RULES: dict[str, Rule] = {
     config.CONNECTIVITY: Rule(
         id=config.CONNECTIVITY,
         rule_type=_connectivity_rule_type,
-        description="Mouse connectivity matches user preference",
-        applicable_to_users=lambda facts: facts.get("wireless") is not None,
-        mouse_compatibility=_wireless_compatible,
-        weight=_wireless_weight,
-        explanation=_wireless_explanation,
+        description="Mouse connectivity type matches the user's preference",
+        applicable_to_users=lambda facts: facts.get("connectivity") is not None,
+        mouse_compatibility=_connectivity_compatible,
+        weight=_connectivity_weight,
+        explanation=_connectivity_explanation,
     ),
 
     config.BUDGET: Rule(
@@ -233,7 +276,7 @@ GENERAL_RULES: dict[str, Rule] = {
 
 # ── Gamer rule helpers ────────────────────────────────────────────────────────
 
-def _type_of_game_rule_type(facts: dict, mouse) -> RuleType:
+def _type_of_game_rule_type(facts: dict) -> RuleType:
     if facts.get("type_of_game") == Game_Type.MMORPG:
         return RuleType.HARD
     return RuleType.SOFT

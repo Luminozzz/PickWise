@@ -20,7 +20,7 @@ export default function QuestionView({ question, answer, onSelect, onSubmit }) {
 function SelectInput({ question, answer, onSelect }) {
   return (
     <div className="quiz__options">
-      {question.options.map((opt, i) => (
+      {question.options.map((opt) => (
         <button
           key={opt.value}
           type="button"
@@ -28,7 +28,7 @@ function SelectInput({ question, answer, onSelect }) {
           className={'quiz__option' + (answer === opt.value ? ' is-selected' : '')}
           onClick={() => onSelect(opt)}
         >
-          <span className="quiz__option-key">{i + 1}</span>
+          <span className="quiz__radio" aria-hidden="true" />
           <span className="quiz__option-label">{opt.label}</span>
         </button>
       ))}

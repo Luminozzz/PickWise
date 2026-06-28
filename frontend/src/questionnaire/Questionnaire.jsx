@@ -1,7 +1,7 @@
 import { useEffect, useRef } from 'react'
 import { useQuestionnaire } from './useQuestionnaire.js'
 import QuestionView from './QuestionView.jsx'
-import Summary from './Summary.jsx'
+import Recommendations from './Recommendations.jsx'
 
 export default function Questionnaire({ onNavigate }) {
   const q = useQuestionnaire()
@@ -34,7 +34,7 @@ export default function Questionnaire({ onNavigate }) {
   }, [q])
 
   if (q.done) {
-    return <Summary answers={q.answers} onRestart={q.restart} onNavigate={onNavigate} />
+    return <Recommendations answers={q.answers} onRestart={q.restart} onNavigate={onNavigate} />
   }
 
   return (
@@ -51,7 +51,6 @@ export default function Questionnaire({ onNavigate }) {
         <div className="quiz__card" key={q.question.id} data-dir={q.direction}>
           <div className="quiz__meta">
             <span className="quiz__section">{q.question.section}</span>
-            <span className="quiz__step">Question {q.stepNumber}</span>
           </div>
           <h2 className="quiz__question" ref={headingRef} tabIndex={-1}>
             {q.question.text}
@@ -75,7 +74,6 @@ export default function Questionnaire({ onNavigate }) {
         >
           ← Back
         </button>
-        <span className="quiz__hint">Press 1–9 to choose · Backspace to go back</span>
       </div>
     </main>
   )

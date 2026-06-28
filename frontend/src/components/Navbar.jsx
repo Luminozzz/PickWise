@@ -1,4 +1,4 @@
-import { User, Grid } from './icons.jsx'
+import { User, Grid, Sparkle } from './icons.jsx'
 
 export default function Navbar({ onNavigate }) {
   const go = (view) => (e) => {
@@ -15,8 +15,14 @@ export default function Navbar({ onNavigate }) {
         PickWise
       </a>
       <nav className="navbar__nav">
-        <button className="navbar__cta" type="button" onClick={go('questionnaire')}>
-          Find my mouse
+        <button
+          className="navbar__icon-btn navbar__icon-btn--ai"
+          type="button"
+          onClick={go('questionnaire')}
+          aria-label="Find my mouse with AI"
+          title="Find my mouse"
+        >
+          <Sparkle />
         </button>
         <a
           className="navbar__icon-btn"

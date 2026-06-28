@@ -1,6 +1,6 @@
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
-from app.routers import landing
+from app.routers import landing, recommend
 
 app = FastAPI(
     title="Lumino",
@@ -20,3 +20,4 @@ app.add_middleware(
 )
 
 app.include_router(landing.api_router)
+app.include_router(recommend.api_router)

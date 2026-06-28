@@ -7,3 +7,15 @@ export async function fetchItems() {
   }
   return res.json()
 }
+
+export async function fetchRecommendations(answers) {
+  const res = await fetch(`${BASE}/api/v1/recommend`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify(answers),
+  })
+  if (!res.ok) {
+    throw new Error(`Request failed: ${res.status} ${res.statusText}`)
+  }
+  return res.json()
+}

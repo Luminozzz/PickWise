@@ -10,7 +10,10 @@ def run(facts: dict, candidates: list, rules: list) -> list[Bundle]:
     bundles = [Bundle(candidates=candidates, passed_hard_rules=[], failed_hard_rules=[])]
 
     for rule in applicable:
-        if rule.rule_type == RuleType.HARD:
+        # rule_type may be a callable that decides HARD/SOFT from the facts
+        # (e.g. connectivity is HARD on a definitive yes/no, SOFT on "preferably").
+        rule_type = rule.rule_type(facts) if callable(rule.rule_type) else rule.rule_type
+        if rule_type == RuleType.HARD:
             next_bundles = []
             for bundle in bundles:
                 passed = [m for m in bundle.candidates if rule.mouse_compatibility(facts, m)]

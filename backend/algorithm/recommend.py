@@ -23,9 +23,20 @@ Office worker Questions:
   extra_buttons   : "yes" | "preferably" | "no"
 """
 
-from .classes import Hand_Size, Game_Type, Preferability, RuleType, Usage, User_Type
+from .classes import Hand_Size, Game_Type, Preferability, Connectivity, RuleType, Usage, User_Type
 from .rules import GENERAL_RULES, GAMER_RULES, STUDENT_RULES, OFFICE_RULES
 from . import engine
+
+
+def _connectivity(wireless_value, wired_too):
+    """Combine the wireless preference (Q15) and the wired-too follow-up (Q16)
+    into a desired connectivity product type."""
+    if wireless_value is None:
+        return None
+    if wireless_value == "no":
+        return Connectivity.STRICTLY_WIRED
+    # "yes" / "preferably": want wireless; "wired too" means they also want a cable
+    return Connectivity.BOTH if wired_too else Connectivity.STRICTLY_WIRELESS
 
 
 def recommend(payload: dict, candidates: list) -> dict:
@@ -47,15 +58,27 @@ def recommend(payload: dict, candidates: list) -> dict:
     if not bundles:
         return {"passed_rules": [], "failed_rules": [], "results": []}
 
-    best = bundles[-1]
     applicable_rules = [r for r in rules if r.applicable_to_users(facts)]
-    soft_rules = [r for r in applicable_rules if r.rule_type != RuleType.HARD]
+    soft_rules = [r for r in applicable_rules if _is_soft(r, facts)]
 
+    # Hard rules don't exclude anything — every candidate is returned. Bundles
+    # that passed more hard rules come first, so mice that don't fit are pushed
+    # below the ones that do; within a bundle they're ordered by soft score.
+    results = []
+    for bundle in reversed(bundles):  # bundles are sorted ascending by priority
+        results.extend(_format_mice(facts, bundle, applicable_rules, soft_rules))
+
+    best = bundles[-1]
     return {
         "passed_rules": best.passed_hard_rules,
         "failed_rules": best.failed_hard_rules,
-        "results": _format_mice(facts, best, applicable_rules, soft_rules),
+        "results": results,
     }
+
+
+def _is_soft(rule, facts) -> bool:
+    rule_type = rule.rule_type(facts) if callable(rule.rule_type) else rule.rule_type
+    return rule_type != RuleType.HARD
 
 
 def _build_facts(payload: dict) -> dict:
@@ -70,9 +93,14 @@ def _build_facts(payload: dict) -> dict:
     budget_min = payload.get("budget_min")
     budget_max = payload.get("budget_max")
 
+    wireless_value = payload.get("wireless")
+
     return {
         "hand_size":          _enum(Hand_Size, payload.get("hand_size")),
-        "wireless":           _enum(Preferability, payload.get("wireless")),
+        "wireless":           _enum(Preferability, wireless_value),
+        "connectivity":       _connectivity(wireless_value, payload.get("wired_too")),
+        # a definitive yes/no filters; "preferably" only scores
+        "connectivity_strict": wireless_value in ("yes", "no"),
         "budget":             (float(budget_min), float(budget_max))
                               if budget_min is not None and budget_max is not None
                               else None,
@@ -84,6 +112,8 @@ def _build_facts(payload: dict) -> dict:
         "travel_portability": _enum(Usage, payload.get("travel_portability")),
         "extra_buttons":      _enum(Preferability, payload.get("extra_buttons")),
         "hours_worked":       _enum(Usage, payload.get("hours_worked")),
+        # preloaded {mouse_id: price} so budget scoring needs no per-mouse query
+        "prices":             payload.get("prices"),
     }
 
 
@@ -113,6 +143,8 @@ def _format_mice(facts: dict, bundle, applicable_rules: list, soft_rules: list) 
             "product_name": mouse.product_name,
             "brand_name":   mouse.brand_name,
             "score":        score,
+            "passed_rules": list(bundle.passed_hard_rules),
+            "failed_rules": list(bundle.failed_hard_rules),
             "explanations": explanations,
         })
 

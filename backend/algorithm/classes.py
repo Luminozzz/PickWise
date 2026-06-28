@@ -20,6 +20,11 @@ class Preferability(Enum):
     PREFERABLY = "preferably"
     NO ="no"
 
+class Connectivity(Enum):
+    STRICTLY_WIRELESS = "strictly_wireless"
+    BOTH = "both"
+    STRICTLY_WIRED = "strictly_wired"
+
 class RuleType(Enum):
     HARD = "hard"
     SOFT = "soft"
