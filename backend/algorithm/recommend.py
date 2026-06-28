@@ -27,6 +27,7 @@ from .classes import Hand_Size, Game_Type, Preferability, Connectivity, RuleType
 from .rules import GENERAL_RULES, GAMER_RULES, STUDENT_RULES, OFFICE_RULES
 from . import engine
 from . import config
+from database.models import Ergonomy
 
 
 # Short, tag-friendly labels for each rule, surfaced as criterion chips on the
@@ -194,17 +195,150 @@ def _criterion_status(facts: dict, mouse, rule, bundle) -> str:
     return "neutral"
 
 
+# ── Specific, mouse-aware tag labels ──────────────────────────────────────────
+# Each returns a short, concrete descriptor of THIS mouse for the criterion
+# (e.g. "Wired + wireless", "Expensive", "8 buttons") rather than the generic
+# category name. Signature: (facts, mouse, status) -> str.
+
+def _label_connectivity(facts, mouse, status):
+    conn = getattr(mouse, "connectivity", None)
+    if conn is None:
+        return "Connectivity"
+    wireless = bool(conn.bluetooth or conn.dongle)
+    wired = bool(conn.wired)
+    if wireless and wired:
+        return "Wired + wireless"
+    if wireless:
+        return "Wireless"
+    if wired:
+        return "Wired"
+    return "Connectivity"
+
+
+def _label_price(facts, mouse, status):
+    budget = facts.get("budget")
+    prices = facts.get("prices") or {}
+    price = prices.get(getattr(mouse, "id", None))
+    if budget is None or price is None:
+        return "Price"
+    low, high = budget
+    if low <= price <= high:
+        return "In budget"
+    if price > high:
+        return "A bit pricey" if status == "neutral" else "Expensive"
+    return "A bit cheap" if status == "neutral" else "Below budget"
+
+
+def _label_hand_size(facts, mouse, status):
+    if status == "fit":
+        return "Right size"
+    hand = facts.get("hand_size")
+    length = getattr(mouse, "length", None)
+    if length is None:
+        return "Size unknown"
+    if hand == Hand_Size.SMALL:
+        return "Too large"
+    if hand == Hand_Size.LARGE:
+        return "Too small"
+    if length > config.MEDIUM_HAND_SIZE:
+        return "Too large"
+    if length < config.SMALL_HAND_SIZE:
+        return "Too small"
+    return "Right size"
+
+
+def _label_left_hand(facts, mouse, status):
+    return "Left-friendly" if getattr(mouse, "left_fit", False) else "Right-hand shape"
+
+
+def _label_usage(facts, mouse, status):
+    if facts.get("user_type") == User_Type.GAMER:
+        return "Gaming-grade" if getattr(mouse, "gaming_specs", None) is not None else "Not gaming-focused"
+    battery = getattr(mouse, "min_battery_life", None)
+    return "Long battery" if (battery is not None and battery > 60) else "Short battery"
+
+
+_GENRE_NAME = {
+    Game_Type.FPS: "FPS",
+    Game_Type.MMORPG: "MMORPG",
+    Game_Type.RTS: "RTS",
+    Game_Type.MOBA: "MOBA",
+}
+
+
+def _label_game(facts, mouse, status):
+    name = _GENRE_NAME.get(facts.get("type_of_game"))
+    if name is None:
+        return "Game specs"
+    if name == "MMORPG":
+        return "Enough buttons" if status == "fit" else "Too few buttons"
+    return f"{name}-ready" if status == "fit" else f"Weak for {name}"
+
+
+def _label_weight(facts, mouse, status):
+    weight = getattr(mouse, "weight", None)
+    if not weight:
+        return "Weight"
+    if weight <= config.LIGHT_WEIGHT:
+        return "Lightweight"
+    if weight <= config.MODERATE_WEIGHT:
+        return "Mid-weight"
+    return "Heavy"
+
+
+def _label_rgb(facts, mouse, status):
+    gaming = getattr(mouse, "gaming_specs", None)
+    return "Has RGB" if (gaming is not None and gaming.rgb) else "No RGB"
+
+
+def _label_portability(facts, mouse, status):
+    return "Portable" if status == "fit" else "Less portable"
+
+
+def _label_buttons(facts, mouse, status):
+    count = getattr(mouse, "number_of_buttons", None)
+    return f"{count} buttons" if count else "Buttons"
+
+
+def _label_ergonomics(facts, mouse, status):
+    return "Ergonomic" if getattr(mouse, "ergonomy", None) == Ergonomy.ERGONOMIC else "Not ergonomic"
+
+
+CRITERION_LABEL_FUNCS = {
+    config.CONNECTIVITY: _label_connectivity,
+    config.BUDGET: _label_price,
+    config.HAND_SIZE: _label_hand_size,
+    config.LEFT_HANDED: _label_left_hand,
+    config.USER_TYPE: _label_usage,
+    config.TYPE_OF_GAME: _label_game,
+    config.LIGHT_WEIGHT_MOUSE: _label_weight,
+    config.RGB_LIGHTING: _label_rgb,
+    config.TRAVEL_PORTABILITY: _label_portability,
+    config.EXTRA_BUTTONS_REQUIRED: _label_buttons,
+    config.SHORTCUT_BUTTONS_REQUIRED: _label_buttons,
+    config.LONG_HOURS: _label_ergonomics,
+}
+
+
+def _criterion_label(facts, mouse, rule, status) -> str:
+    func = CRITERION_LABEL_FUNCS.get(rule.id)
+    if func is not None:
+        return func(facts, mouse, status)
+    return CRITERION_LABELS.get(rule.id, rule.id)
+
+
 def _criteria(facts: dict, mouse, bundle, applicable_rules: list) -> list:
-    """Per-criterion tags for a mouse: a short label, a fit status, and the full
-    explanation (used as the tag's tooltip on the frontend)."""
-    return [
-        {
-            "label": CRITERION_LABELS.get(rule.id, rule.id),
-            "status": _criterion_status(facts, mouse, rule, bundle),
+    """Per-criterion tags for a mouse: a specific mouse-aware label, a fit status,
+    and the full explanation (used as the tag's tooltip on the frontend)."""
+    out = []
+    for rule in applicable_rules:
+        status = _criterion_status(facts, mouse, rule, bundle)
+        out.append({
+            "label": _criterion_label(facts, mouse, rule, status),
+            "status": status,
             "detail": rule.explain(facts, mouse),
-        }
-        for rule in applicable_rules
-    ]
+        })
+    return out
 
 
 def _format_mice(facts: dict, bundle, applicable_rules: list, soft_rules: list) -> list:
