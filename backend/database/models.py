@@ -8,10 +8,13 @@ from sqlalchemy import (
     Float,
     Boolean,
     Date,
+    DateTime,
+    JSON,
     Enum as SAEnum,
     ForeignKey,
     UniqueConstraint,
     create_engine,
+    func,
 )
 from sqlalchemy.orm import relationship, declarative_base, sessionmaker
 
@@ -123,6 +126,15 @@ class Price_History(Base):
     store_link = Column(String, nullable=False)
     store_name = Column(String, nullable=False)
     sort_by = Column(SAEnum(Sort_By))
+
+
+class Preference_Profile(Base):
+    __tablename__ = "preference_profile"
+
+    id = Column(String, primary_key=True)            # UUID4 string, generated server-side
+    answers = Column(JSON, nullable=False)            # questionnaire answers dict
+    created_at = Column(DateTime, server_default=func.now())
+    updated_at = Column(DateTime, server_default=func.now(), onupdate=func.now())
 
 
 # --------------------------------------------------------------------------- #
