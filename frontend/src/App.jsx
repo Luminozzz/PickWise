@@ -158,36 +158,42 @@ export default function App() {
     window.scrollTo(0, 0)
   }
 
-  // Recommendations and profile need answers; without any (and no saved profile to
-  // hydrate from), send the user to the quiz.
+  // Editing a profile needs answers; without any (and no saved profile to hydrate
+  // from), send the user to the quiz. Recommendations don't require a profile —
+  // with none they fall back to general (public) ranking.
   useEffect(() => {
-    if ((view === 'recommendations' || view === 'profile') && !answers && !profileId) {
+    if (view === 'profile' && !answers && !profileId) {
       navigate('questionnaire')
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [view, answers, profileId])
 
+  const hydrationFallback = () => {
+    if (hydrationError) {
+      return (
+        <main className="recs">
+          <div className="recs__state">Couldn't load your saved preferences.</div>
+          <div className="recs__actions">
+            <button className="btn-primary" type="button" onClick={retryHydration}>Try Again</button>
+            <button className="quiz__restart" type="button" onClick={() => navigate('questionnaire', null)}>Start Fresh</button>
+          </div>
+        </main>
+      )
+    }
+    return null // hydrating
+  }
+
   if (view === 'questionnaire') {
     return <QuestionnairePage onNavigate={navigate} />
   }
-  if (view === 'recommendations' || view === 'profile') {
-    if (!answers) {
-      if (hydrationError) {
-        return (
-          <main className="recs">
-            <div className="recs__state">Couldn't load your saved preferences.</div>
-            <div className="recs__actions">
-              <button className="btn-primary" type="button" onClick={retryHydration}>Try Again</button>
-              <button className="quiz__restart" type="button" onClick={() => navigate('questionnaire', null)}>Start Fresh</button>
-            </div>
-          </main>
-        )
-      }
-      return null // hydrating / redirecting
-    }
-    return view === 'recommendations'
-      ? <RecommendationsPage answers={answers} onNavigate={navigate} />
-      : <ProfilePage answers={answers} onNavigate={navigate} onSaveProfile={handleSaveProfile} />
+  if (view === 'recommendations') {
+    // With a saved profile we wait for hydration; with none, show general results.
+    if (!answers && profileId) return hydrationFallback()
+    return <RecommendationsPage answers={answers || {}} onNavigate={navigate} />
   }
-  return <LandingPage onNavigate={navigate} />
+  if (view === 'profile') {
+    if (!answers) return hydrationFallback()
+    return <ProfilePage answers={answers} onNavigate={navigate} onSaveProfile={handleSaveProfile} />
+  }
+  return <LandingPage onNavigate={navigate} answers={answers} />
 }

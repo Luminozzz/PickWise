@@ -9,11 +9,12 @@ const MAX_SWATCHES = 6
 // Catalogue / card-view product card. In the recommendations card view it also
 // receives `rank`, `isBest`, and `criteria` (the questionnaire fit results),
 // which surface a rank badge and the fit/unfit/neutral tags on the card.
-export default function ProductCard({ item, rank, isBest, criteria }) {
+export default function ProductCard({ item, rank, isBest, criteria, answers }) {
   const [imgFailed, setImgFailed] = useState(false)
 
   const description = buildDescription(item)
-  const tags = buildTags(item).slice(0, 3)
+  // The three most relevant spec tags for this user (general defaults if no answers).
+  const tags = buildTags(item, answers).slice(0, 3)
 
   // Split the title so the company name sits on its own line above the model.
   const brand = item.brand_name || ''
@@ -73,41 +74,45 @@ export default function ProductCard({ item, rank, isBest, criteria }) {
         )}
       </div>
 
-      {colours.length > 0 && (
-        <div
-          className="card__colours"
-          aria-label={`${colours.length} colour${colours.length > 1 ? 's' : ''}: ${colours.join(', ')}`}
-        >
-          {colours.slice(0, MAX_SWATCHES).map((c) => {
-            const hex = colourToHex(c)
-            return (
-              <span
-                key={c}
-                className={'swatch' + (hex ? '' : ' swatch--unknown')}
-                style={hex ? { background: hex } : undefined}
-                title={c}
-              />
-            )
-          })}
-          {colours.length > MAX_SWATCHES && (
-            <span className="card__colours-more">+{colours.length - MAX_SWATCHES}</span>
-          )}
-        </div>
-      )}
-
-      {hasCriteria ? (
-        <CriteriaTags criteria={criteria} />
-      ) : (
-        tags.length > 0 && (
-          <div className="card__tags">
-            {tags.map((tag) => (
-              <span className="tag" key={tag}>
-                {tag}
-              </span>
-            ))}
+      {/* Colours + tags sit at the bottom of the card so cards stay aligned
+          whether or not a product has colour swatches. */}
+      <div className="card__meta-bottom">
+        {colours.length > 0 && (
+          <div
+            className="card__colours"
+            aria-label={`${colours.length} colour${colours.length > 1 ? 's' : ''}: ${colours.join(', ')}`}
+          >
+            {colours.slice(0, MAX_SWATCHES).map((c) => {
+              const hex = colourToHex(c)
+              return (
+                <span
+                  key={c}
+                  className={'swatch' + (hex ? '' : ' swatch--unknown')}
+                  style={hex ? { background: hex } : undefined}
+                  title={c}
+                />
+              )
+            })}
+            {colours.length > MAX_SWATCHES && (
+              <span className="card__colours-more">+{colours.length - MAX_SWATCHES}</span>
+            )}
           </div>
-        )
-      )}
+        )}
+
+        {hasCriteria ? (
+          <CriteriaTags criteria={criteria} />
+        ) : (
+          tags.length > 0 && (
+            <div className="card__tags">
+              {tags.map((tag) => (
+                <span className="tag" key={tag}>
+                  {tag}
+                </span>
+              ))}
+            </div>
+          )
+        )}
+      </div>
 
       <div className="card__footer">
         <button className="card__action" type="button">

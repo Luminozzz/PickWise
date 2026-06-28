@@ -33,9 +33,9 @@ export default function Navbar({ onNavigate }) {
         <button
           className="navbar__icon-btn"
           type="button"
-          onClick={go('questionnaire')}
+          onClick={go('recommendations')}
           aria-label="Find my mouse with AI"
-          title="Find my mouse"
+          title="AI recommendations"
         >
           <Sparkle />
         </button>
