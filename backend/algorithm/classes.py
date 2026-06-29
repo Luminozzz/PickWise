@@ -1,4 +1,4 @@
-from algorithm import config
+from . import config
 from enum import Enum
 from dataclasses import dataclass
 from typing import Any, Callable
@@ -19,6 +19,11 @@ class Preferability(Enum):
     YES = "yes"
     PREFERABLY = "preferably"
     NO ="no"
+
+class Connectivity(Enum):
+    STRICTLY_WIRELESS = "strictly_wireless"
+    BOTH = "both"
+    STRICTLY_WIRED = "strictly_wired"
 
 class RuleType(Enum):
     HARD = "hard"

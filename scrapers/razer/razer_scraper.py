@@ -6,6 +6,7 @@ from urllib.parse import urljoin
 import random
 import time
 from scrapers import config
+from scrapers.image_utils import razer_full_res
 from playwright_stealth import Stealth
 import unicodedata
 
@@ -154,7 +155,7 @@ class razer_scraper(scrapy.Spider):
                         {
                             'product_name': name,
                             'feature': 'img_link',
-                            'value': img_link['src'],
+                            'value': razer_full_res(img_link['src']),
                         }]
                         print(append_data)
                         data.extend(append_data)
@@ -260,9 +261,14 @@ class razer_scraper(scrapy.Spider):
             return ('number_of_buttons', self.number_of_buttons(value))
         
         elif feature in config.RAZER_CONNECTIVITY:
-            return [('bluetooth', self.bluetooth(value)),
-                    ('dongle', self.dongle(value)),
-                    ('wired', self.wired(value))]
+            bluetooth = self.bluetooth(value)
+            dongle = self.dongle(value)
+            wired = self.wired(value)
+            if not (bluetooth or dongle or wired):
+                wired = True  # default to wired when nothing is detected
+            return [('bluetooth', bluetooth),
+                    ('dongle', dongle),
+                    ('wired', wired)]
         
         elif feature in config.RAZER_BATTERY_LIFE:
             return ('battery_life', self.battery_life(value))

@@ -1,20 +1,34 @@
-from flask_sqlalchemy import SQLAlchemy
-from enum import Enum
-from flask import Flask
 import os
-from flask_migrate import Migrate
-from sqlalchemy import MetaData
+from enum import Enum
 
-naming_convention = {
-    "ix": "ix_%(column_0_label)s",
-    "uq": "uq_%(table_name)s_%(column_0_name)s",
-    "ck": "ck_%(table_name)s_%(constraint_name)s",
-    "fk": "fk_%(table_name)s_%(column_0_name)s_%(referred_table_name)s",
-    "pk": "pk_%(table_name)s",
-}
+from sqlalchemy import (
+    Column,
+    Integer,
+    String,
+    Float,
+    Boolean,
+    Date,
+    DateTime,
+    JSON,
+    Enum as SAEnum,
+    ForeignKey,
+    UniqueConstraint,
+    create_engine,
+    func,
+)
+from sqlalchemy.orm import relationship, declarative_base, sessionmaker
 
-migrate = Migrate()
-db = SQLAlchemy(metadata=MetaData(naming_convention=naming_convention))
+# Load backend/.env so DATABASE_URL / DB_SCHEMA are available when these
+# tools run standalone (no-op if python-dotenv is missing or the file absent).
+try:
+    from dotenv import load_dotenv
+
+    load_dotenv(os.path.join(os.path.dirname(os.path.dirname(__file__)), ".env"))
+except Exception:
+    pass
+
+Base = declarative_base()
+
 
 class Ergonomy(Enum):
     ERGONOMIC = "ergonomic"
@@ -22,89 +36,145 @@ class Ergonomy(Enum):
     AMBIDEXTROUS = "ambidextrous"
     NOT_MENTIONED = "none"
 
-class Sort_By(Enum):
-    REVIEW = 'reviews'
-    PRICE = 'price'
-    OFFICIAL = 'official'
 
-class Mouse(db.Model):
+class Sort_By(Enum):
+    REVIEW = "reviews"
+    PRICE = "price"
+    OFFICIAL = "official"
+
+
+class Mouse(Base):
     __tablename__ = "mouse_model"
 
-    id = db.Column(db.Integer, primary_key = True)
-    product_name = db.Column(db.String, nullable = False, unique = True)
-    brand_name = db.Column(db.String, nullable = False)
-    link = db.Column(db.String)
-    img_link = db.Column(db.String)
-    left_fit = db.Column(db.Boolean, default = False)
-    ergonomy = db.Column(db.Enum(Ergonomy))
-    max_DPI = db.Column(db.Integer)
-    length = db.Column(db.Float) # mm
-    width = db.Column(db.Float) # mm
-    height = db.Column(db.Float) # mm
-    weight = db.Column(db.Float) # g
-    number_of_buttons = db.Column(db.Integer)
-    min_battery_life = db.Column(db.Integer)
-    max_battery_life = db.Column(db.Integer)
-    min_polling_rate = db.Column(db.Integer)
-    max_polling_rate = db.Column(db.Integer)
-    other_features = db.Column(db.String)
+    id = Column(Integer, primary_key=True)
+    product_name = Column(String, nullable=False, unique=True)
+    brand_name = Column(String, nullable=False)
+    link = Column(String)
+    img_link = Column(String)  # main image (transparent product render preferred)
+    alt_img_link = Column(String)  # secondary / marketing image (e.g. lifestyle shot)
+    left_fit = Column(Boolean, default=False)
+    ergonomy = Column(SAEnum(Ergonomy))
+    max_DPI = Column(Integer)
+    length = Column(Float)  # mm
+    width = Column(Float)  # mm
+    height = Column(Float)  # mm
+    weight = Column(Float)  # g
+    number_of_buttons = Column(Integer)
+    min_battery_life = Column(Integer)
+    max_battery_life = Column(Integer)
+    min_polling_rate = Column(Integer)
+    max_polling_rate = Column(Integer)
+    other_features = Column(String)
 
-    gaming_specs = db.relationship('Gaming_Mouse', backref='mouse', uselist=False)
-    skins = db.relationship('Mouse_Skins', backref='mouse', lazy=True)
-    connectivity = db.relationship('Mouse_Connectivity', backref='mouse', uselist=False)
-    
-class Gaming_Mouse(db.Model):
+    gaming_specs = relationship("Gaming_Mouse", backref="mouse", uselist=False)
+    skins = relationship("Mouse_Skins", backref="mouse", lazy=True)
+    connectivity = relationship("Mouse_Connectivity", backref="mouse", uselist=False)
+
+
+class Gaming_Mouse(Base):
     __tablename__ = "gaming_mouse_specs"
 
-    mouse_id = db.Column(db.Integer, db.ForeignKey('mouse_model.id'), primary_key = True)
-    rgb = db.Column(db.Boolean, default=False)
-    acceleration = db.Column(db.Integer) # Maximum linear acceleration in G’s before mouse stops working properly.
-    tracking_speed = db.Column(db.Integer) # Tracking speed measured in inches per second (IPS)
+    mouse_id = Column(Integer, ForeignKey("mouse_model.id"), primary_key=True)
+    rgb = Column(Boolean, default=False)
+    acceleration = Column(Integer)  # Max linear acceleration in G before tracking fails
+    tracking_speed = Column(Integer)  # Tracking speed in inches per second (IPS)
 
-class Mouse_Connectivity(db.Model):
+
+class Mouse_Connectivity(Base):
     __tablename__ = "mouse_connectivity"
 
-    mouse_id = db.Column(db.Integer, db.ForeignKey('mouse_model.id'), primary_key = True)
-    bluetooth = db.Column(db.Boolean, default = False)
-    dongle = db.Column(db.Boolean, default = False)
-    wired = db.Column(db.Boolean, default = False)
+    mouse_id = Column(Integer, ForeignKey("mouse_model.id"), primary_key=True)
+    bluetooth = Column(Boolean, default=False)
+    dongle = Column(Boolean, default=False)
+    wired = Column(Boolean, default=False)
 
-class Mouse_Skins(db.Model):
+
+class Mouse_Skins(Base):
     __tablename__ = "mouse_skins"
 
-    id = db.Column(db.Integer, primary_key = True, autoincrement=True)
-    mouse_id = db.Column(db.Integer, db.ForeignKey('mouse_model.id'), nullable=False)
-    product_name = db.Column(db.String, nullable=False)
-    colour = db.Column(db.String, nullable=False)
-    img_link = db.Column(db.String, nullable=False)
+    id = Column(Integer, primary_key=True, autoincrement=True)
+    mouse_id = Column(Integer, ForeignKey("mouse_model.id"), nullable=False)
+    product_name = Column(String, nullable=False)
+    colour = Column(String, nullable=False)
+    img_link = Column(String, nullable=False)
 
-class Price_History(db.Model):
+
+class Price_History(Base):
     __tablename__ = "price_history"
+    # One price per (mouse, store, colour, day). NULLS NOT DISTINCT so rows with
+    # a NULL colour still can't duplicate (Postgres 15+).
+    __table_args__ = (
+        UniqueConstraint(
+            "mouse_id",
+            "store_name",
+            "colour",
+            "date",
+            name="uq_price_history_mouse_store_colour_date",
+            postgresql_nulls_not_distinct=True,
+        ),
+    )
 
-    id = db.Column(db.Integer, primary_key = True, autoincrement=True)
-    mouse_id = db.Column(db.Integer, db.ForeignKey('mouse_model.id'), nullable=False)
-    product_name = db.Column(db.String, nullable=False)
-    date = db.Column(db.Date, nullable=False)
-    currency = db.Column(db.String, nullable=False)
-    price = db.Column(db.Float, nullable=False)
-    num_of_stars = db.Column(db.Float, nullable=True)
-    num_of_reviews = db.Column(db.Integer, nullable=True)
-    colour = db.Column(db.String, nullable=True)
-    store_link = db.Column(db.String, nullable=False)
-    store_name = db.Column(db.String, nullable=False)
-    sort_by = db.Column(db.Enum(Sort_By))
-
-def create_app():
-    app = Flask(__name__)
-    db_path = os.path.join(os.path.dirname(__file__), 'mouse.db')
-    app.config['SQLALCHEMY_DATABASE_URI'] = f'sqlite:///{db_path}'
-    app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
-    db.init_app(app)
-    migrate.init_app(app, db, render_as_batch=True)
-    return app
+    id = Column(Integer, primary_key=True, autoincrement=True)
+    mouse_id = Column(Integer, ForeignKey("mouse_model.id"), nullable=False)
+    product_name = Column(String, nullable=False)
+    date = Column(Date, nullable=False)
+    currency = Column(String, nullable=False)
+    price = Column(Float, nullable=False)
+    num_of_stars = Column(Float, nullable=True)
+    num_of_reviews = Column(Integer, nullable=True)
+    colour = Column(String, nullable=True)
+    store_link = Column(String, nullable=False)
+    store_name = Column(String, nullable=False)
+    sort_by = Column(SAEnum(Sort_By))
 
 
+class Preference_Profile(Base):
+    __tablename__ = "preference_profile"
+
+    id = Column(String, primary_key=True)            # UUID4 string, generated server-side
+    answers = Column(JSON, nullable=False)            # questionnaire answers dict
+    created_at = Column(DateTime, server_default=func.now())
+    updated_at = Column(DateTime, server_default=func.now(), onupdate=func.now())
 
 
+# --------------------------------------------------------------------------- #
+# Engine / session — plain SQLAlchemy against Postgres (sync, via psycopg2).
+# Reads the same DATABASE_URL / DB_SCHEMA env vars as the FastAPI app.
+# --------------------------------------------------------------------------- #
+
+DB_SCHEMA = os.environ.get("DB_SCHEMA", "lumino").strip()
 
 
+def _sync_database_url():
+    url = os.environ.get("DATABASE_URL", "").strip()
+    if not url:
+        # Offline fallback: local SQLite snapshot next to this module.
+        return "sqlite:///" + os.path.join(os.path.dirname(__file__), "mouse.db")
+    # The app uses async drivers; the seeding tools are synchronous.
+    return url.replace("+asyncpg", "+psycopg2").replace("+aiosqlite", "")
+
+
+def _make_engine():
+    url = _sync_database_url()
+    connect_args = {}
+    if url.startswith("postgresql"):
+        # Managed Postgres (DigitalOcean) requires SSL; pin the schema so
+        # unqualified table names resolve, matching the async engine.
+        connect_args = {
+            "sslmode": "require",
+            "options": f"-c search_path={DB_SCHEMA}",
+        }
+    return create_engine(url, connect_args=connect_args, future=True)
+
+
+engine = _make_engine()
+SessionLocal = sessionmaker(bind=engine, autoflush=False, future=True)
+
+
+def init_db():
+    """Create any tables that don't exist yet (existing ones are left as-is)."""
+    Base.metadata.create_all(engine)
+
+
+def get_session():
+    return SessionLocal()
