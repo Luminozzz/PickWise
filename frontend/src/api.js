@@ -46,3 +46,15 @@ export async function updateProfile(id, answers) {
   if (!res.ok) throw new Error(`Request failed: ${res.status} ${res.statusText}`)
   return res.json()
 }
+
+// Single product, scored against the user's answers (empty {} = no questionnaire).
+export async function fetchProduct(id, answers) {
+  const res = await fetch(`${BASE}/api/v1/product/${id}`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify(answers || {}),
+  })
+  if (res.status === 404) return null
+  if (!res.ok) throw new Error(`Request failed: ${res.status} ${res.statusText}`)
+  return res.json()
+}

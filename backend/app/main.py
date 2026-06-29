@@ -1,6 +1,6 @@
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
-from app.routers import landing, recommend, profile
+from app.routers import landing, recommend, profile, product
 from database.models import init_db
 
 app = FastAPI(
@@ -28,3 +28,4 @@ def _ensure_tables():
 app.include_router(landing.api_router)
 app.include_router(recommend.api_router)
 app.include_router(profile.api_router)
+app.include_router(product.api_router)

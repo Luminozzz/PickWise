@@ -9,7 +9,7 @@ const MAX_SWATCHES = 6
 // Catalogue / card-view product card. In the recommendations card view it also
 // receives `rank`, `isBest`, and `criteria` (the questionnaire fit results),
 // which surface a rank badge and the fit/unfit/neutral tags on the card.
-export default function ProductCard({ item, rank, isBest, criteria, answers }) {
+export default function ProductCard({ item, rank, isBest, criteria, answers, onNavigate }) {
   const [imgFailed, setImgFailed] = useState(false)
 
   const description = buildDescription(item)
@@ -29,7 +29,22 @@ export default function ProductCard({ item, rank, isBest, criteria, answers }) {
   const hasCriteria = criteria && criteria.length > 0
 
   return (
-    <article className="card">
+    <article
+      className={'card' + (onNavigate ? ' card--clickable' : '')}
+      onClick={onNavigate ? () => onNavigate('product', item.id) : undefined}
+      role={onNavigate ? 'button' : undefined}
+      tabIndex={onNavigate ? 0 : undefined}
+      onKeyDown={
+        onNavigate
+          ? (e) => {
+              if (e.key === 'Enter' || e.key === ' ') {
+                e.preventDefault()
+                onNavigate('product', item.id)
+              }
+            }
+          : undefined
+      }
+    >
       <div className="card__image">
         {rank != null && (
           <span className={'card__rank' + (isBest ? ' card__rank--best' : '')}>
@@ -115,11 +130,22 @@ export default function ProductCard({ item, rank, isBest, criteria, answers }) {
       </div>
 
       <div className="card__footer">
-        <button className="card__action" type="button">
+        <button className="card__action" type="button" onClick={(e) => e.stopPropagation()}>
           Compare
         </button>
         <span className="card__footer-divider" />
-        {item.link ? (
+        {onNavigate ? (
+          <button
+            className="card__action card__action--primary"
+            type="button"
+            onClick={(e) => {
+              e.stopPropagation()
+              onNavigate('product', item.id)
+            }}
+          >
+            View details <ArrowRight size={14} />
+          </button>
+        ) : item.link ? (
           <a
             className="card__action card__action--primary"
             href={item.link}
