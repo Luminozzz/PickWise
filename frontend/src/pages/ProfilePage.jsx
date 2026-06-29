@@ -7,9 +7,12 @@ import { ArrowRight } from '../components/icons.jsx'
 
 const USER_TYPE_Q = QUESTIONS[1] // "Who will be the main user of this mouse?"
 
-// Persona section that swipes when the user type changes: the outgoing fields
-// glide out to the right while the incoming fields drift in from the left, with
-// the height easing between the two so the rest of the page settles smoothly.
+// Persona section that swipes when the user type changes. The whole card is the
+// moving piece: the outgoing card glides out to the right while the incoming one
+// drifts in from the left, with the height easing between the two so the rest of
+// the page settles smoothly. The wrapper carries no surface of its own — each
+// swipe layer is a full .profile__section card, so the border / background /
+// padding travel with the swipe instead of staying behind a static frame.
 function PersonaSwap({ persona, renderField }) {
   const [shown, setShown] = useState(persona)
   const [out, setOut] = useState(null) // outgoing persona during a swipe
@@ -30,7 +33,7 @@ function PersonaSwap({ persona, renderField }) {
     setShown(persona)
   }, [persona])
 
-  // New layer mounted → ease the height to it, then drop the outgoing layer.
+  // New card mounted → ease the height to it, then drop the outgoing card.
   useLayoutEffect(() => {
     if (!out) return
     const toHeight = inRef.current ? inRef.current.offsetHeight : 0
@@ -45,30 +48,27 @@ function PersonaSwap({ persona, renderField }) {
     }
   }, [out, shown])
 
-  return (
-    <section className="profile__section profile__section--persona">
-      <div
-        className="profile__swap"
-        ref={wrapRef}
-        style={{ height }}
-        data-swapping={out ? '' : undefined}
-      >
-        {out && (
-          <div className="profile__swap-layer profile__swap-layer--out" key={'out-' + out.key}>
-            <h3 className="profile__section-title">{out.title}</h3>
-            {out.questionIds.map(renderField)}
-          </div>
-        )}
-        <div
-          className="profile__swap-layer profile__swap-layer--in"
-          key={'in-' + shown.key}
-          ref={inRef}
-        >
-          <h3 className="profile__section-title">{shown.title}</h3>
-          {shown.questionIds.map(renderField)}
-        </div>
-      </div>
+  const card = (p, ref, variant) => (
+    <section
+      className={`profile__section profile__section--persona profile__swap-layer profile__swap-layer--${variant}`}
+      key={`${variant}-${p.key}`}
+      ref={ref}
+    >
+      <h3 className="profile__section-title">{p.title}</h3>
+      {p.questionIds.map(renderField)}
     </section>
+  )
+
+  return (
+    <div
+      className="profile__swap"
+      ref={wrapRef}
+      style={{ height }}
+      data-swapping={out ? '' : undefined}
+    >
+      {out && card(out, null, 'out')}
+      {card(shown, inRef, 'in')}
+    </div>
   )
 }
 

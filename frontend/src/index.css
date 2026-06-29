@@ -1381,12 +1381,21 @@ button {
   margin-top: 28px;
 }
 
-/* Persona swipe: when the user type changes, the outgoing fields glide out to
-   the right while the incoming fields drift in from the left, and the section
-   height eases between the two so the page below settles smoothly. */
+/* Persona swipe: when the user type changes, the whole card glides out to the
+   right while the incoming card drifts in from the left, and the wrapper height
+   eases between the two so the page below settles smoothly. The wrapper is just
+   a positioning/height frame — each layer is a full .profile__section card, so
+   the border, surface and padding travel with the swipe. */
 .profile__swap {
   position: relative;
+  margin-bottom: 28px;
   transition: height 0.6s cubic-bezier(0.5, 0.05, 0.2, 1);
+}
+
+/* The cards now ARE the swipe layers, so the wrapper owns the spacing below and
+   the cards drop their own bottom margin. */
+.profile__swap .profile__section--persona {
+  margin-bottom: 0;
 }
 
 .profile__swap[data-swapping] {
@@ -1399,32 +1408,34 @@ button {
   left: 0;
   right: 0;
   pointer-events: none;
-  animation: personaSwipeOut 0.6s cubic-bezier(0.5, 0.05, 0.2, 1) both;
+  animation: personaCardOut 0.6s cubic-bezier(0.5, 0.05, 0.2, 1) both;
 }
 
 .profile__swap-layer--in {
-  animation: personaSwipeIn 0.6s cubic-bezier(0.5, 0.05, 0.2, 1) both;
+  animation: personaCardIn 0.6s cubic-bezier(0.5, 0.05, 0.2, 1) both;
 }
 
-@keyframes personaSwipeOut {
+/* A slight recede (scale) as the card nears the edge makes the whole panel read
+   like a comet drifting past, not just a flat horizontal pan. */
+@keyframes personaCardOut {
   from {
     opacity: 1;
-    transform: translateX(0);
+    transform: translateX(0) scale(1);
   }
   to {
     opacity: 0;
-    transform: translateX(56px);
+    transform: translateX(60px) scale(0.965);
   }
 }
 
-@keyframes personaSwipeIn {
+@keyframes personaCardIn {
   from {
     opacity: 0;
-    transform: translateX(-56px);
+    transform: translateX(-60px) scale(0.965);
   }
   to {
     opacity: 1;
-    transform: translateX(0);
+    transform: translateX(0) scale(1);
   }
 }
 
