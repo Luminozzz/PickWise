@@ -9,7 +9,14 @@ const MAX_SWATCHES = 6
 // Catalogue / card-view product card. In the recommendations card view it also
 // receives `rank`, `isBest`, and `criteria` (the questionnaire fit results),
 // which surface a rank badge and the fit/unfit/neutral tags on the card.
-export default function ProductCard({ item, rank, isBest, criteria, answers, onNavigate, tags }) {
+// `compareBase` is the mouse the user is currently looking at, and only the
+// product page passes it: comparing from there pins that mouse as the first
+// column and the clicked card becomes the second. Everywhere else it's
+// undefined, which is exactly the "not on a mouse" case — so the catalogue and
+// recommendations need no changes.
+export default function ProductCard({
+  item, rank, isBest, criteria, answers, onNavigate, tags, compareBase,
+}) {
   const [imgFailed, setImgFailed] = useState(false)
 
   const description = buildDescription(item)
@@ -28,6 +35,8 @@ export default function ProductCard({ item, rank, isBest, criteria, answers, onN
   const rating = item.rating
   const colours = item.colours || []
   const hasCriteria = criteria && criteria.length > 0
+  const compareIds =
+    compareBase && compareBase !== item.id ? [compareBase, item.id] : [item.id]
 
   return (
     <article
@@ -38,6 +47,11 @@ export default function ProductCard({ item, rank, isBest, criteria, answers, onN
       onKeyDown={
         onNavigate
           ? (e) => {
+              // Only act on keys aimed at the card itself. Without this, Enter on
+              // the Compare button bubbles up here and preventDefault() swallows
+              // the button's own click, sending the user to the product page
+              // instead of the comparison.
+              if (e.target !== e.currentTarget) return
               if (e.key === 'Enter' || e.key === ' ') {
                 e.preventDefault()
                 onNavigate('product', item.id)
@@ -131,7 +145,14 @@ export default function ProductCard({ item, rank, isBest, criteria, answers, onN
       </div>
 
       <div className="card__footer">
-        <button className="card__action" type="button" onClick={(e) => e.stopPropagation()}>
+        <button
+          className="card__action"
+          type="button"
+          onClick={(e) => {
+            e.stopPropagation()
+            if (onNavigate) onNavigate('compare', compareIds)
+          }}
+        >
           Compare
         </button>
         <span className="card__footer-divider" />

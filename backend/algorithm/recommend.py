@@ -528,3 +528,41 @@ def product_detail(mouse, facts: dict) -> dict:
     ]
 
     return {"details": rows, "criteria": criteria}
+
+
+def compare_detail(mice: list, facts: dict) -> list:
+    """The same spec rows for several mice, ordered by importance to the user.
+
+    Mice don't all carry the same specs — an office mouse has no tracking speed,
+    a wired one no battery — and product_detail() drops a row entirely when a
+    value is None. Zipping those per-mouse lists in the UI would silently
+    misalign the columns, so the rows are built here as the union of what the
+    group has: a mouse missing a spec gets a null cell instead of the row
+    vanishing for everyone. Ordering reuses the same importance list as the
+    product page, so an unanswered quiz falls back to _DEFAULT_ORDER.
+    """
+    applicable = [r for r in _select_rules(facts) if r.applicable_to_users(facts)]
+    order = _IMPORTANCE.get(facts.get("user_type"), _DEFAULT_ORDER)
+    last = len(order)
+
+    cells_by_mouse = []
+    for mouse in mice:
+        status_by_rule = {r.id: _status_for(facts, mouse, r) for r in applicable}
+        cells = {}
+        for key, _label, value_fn, rule_id in _SPECS:
+            value = value_fn(mouse, facts)
+            cells[key] = {
+                "value": value,
+                # A spec this mouse doesn't have can't fit or misfit.
+                "status": status_by_rule.get(rule_id, "none") if value is not None else "none",
+            }
+        cells_by_mouse.append(cells)
+
+    rows = [
+        {"key": key, "label": label, "cells": [c[key] for c in cells_by_mouse]}
+        for key, label, _value_fn, _rule_id in _SPECS
+        # Drop a row only when nobody in the group has it.
+        if any(c[key]["value"] is not None for c in cells_by_mouse)
+    ]
+    rows.sort(key=lambda r: order.index(r["key"]) if r["key"] in order else last)
+    return rows

@@ -243,6 +243,7 @@ export default function ProductPage({ productId, answers, onNavigate }) {
                   item={s}
                   tags={s.reasons}
                   onNavigate={onNavigate}
+                  compareBase={data.id}
                 />
               ))}
             </div>

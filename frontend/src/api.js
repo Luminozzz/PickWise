@@ -58,3 +58,16 @@ export async function fetchProduct(id, answers) {
   if (!res.ok) throw new Error(`Request failed: ${res.status} ${res.statusText}`)
   return res.json()
 }
+
+// Several products side by side: spec rows aligned across every mouse and
+// ordered by what matters to this user (default order with empty answers).
+export async function fetchCompare(ids, answers) {
+  const res = await fetch(`${BASE}/api/v1/compare`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ ids: ids || [], answers: answers || {} }),
+  })
+  if (res.status === 404) return null
+  if (!res.ok) throw new Error(`Request failed: ${res.status} ${res.statusText}`)
+  return res.json()
+}
