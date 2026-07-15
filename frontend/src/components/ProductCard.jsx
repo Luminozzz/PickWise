@@ -9,12 +9,13 @@ const MAX_SWATCHES = 6
 // Catalogue / card-view product card. In the recommendations card view it also
 // receives `rank`, `isBest`, and `criteria` (the questionnaire fit results),
 // which surface a rank badge and the fit/unfit/neutral tags on the card.
-export default function ProductCard({ item, rank, isBest, criteria, answers, onNavigate }) {
+export default function ProductCard({ item, rank, isBest, criteria, answers, onNavigate, tags }) {
   const [imgFailed, setImgFailed] = useState(false)
 
   const description = buildDescription(item)
-  // The three most relevant spec tags for this user (general defaults if no answers).
-  const tags = buildTags(item, answers).slice(0, 3)
+  // Explicit tags (e.g. the why-similar reasons) win; otherwise fall back to the
+  // three most relevant spec tags for this user (general defaults if no answers).
+  const shownTags = tags || buildTags(item, answers).slice(0, 3)
 
   // Split the title so the company name sits on its own line above the model.
   const brand = item.brand_name || ''
@@ -117,9 +118,9 @@ export default function ProductCard({ item, rank, isBest, criteria, answers, onN
         {hasCriteria ? (
           <CriteriaTags criteria={criteria} />
         ) : (
-          tags.length > 0 && (
+          shownTags.length > 0 && (
             <div className="card__tags">
-              {tags.map((tag) => (
+              {shownTags.map((tag) => (
                 <span className="tag" key={tag}>
                   {tag}
                 </span>

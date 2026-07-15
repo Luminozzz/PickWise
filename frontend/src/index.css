@@ -1302,6 +1302,12 @@ button {
   margin-top: 28px;
 }
 
+/* Same actions row, but sitting under the header rather than after the results. */
+.recs__actions--top {
+  margin-top: 18px;
+  flex-wrap: wrap;
+}
+
 @media (max-width: 560px) {
   .rec__why {
     display: none;
@@ -1893,13 +1899,6 @@ button {
   gap: 16px;
 }
 
-.pdp__panel {
-  background: var(--surface);
-  border: 1px solid var(--border);
-  border-radius: var(--radius);
-  padding: 24px;
-}
-
 .pdp__brand {
   display: block;
   font-size: 13px;
@@ -2063,3 +2062,21 @@ button {
 /* Clickable catalogue card / list row -> product detail page */
 .card--clickable { cursor: pointer; }
 .rec--clickable { cursor: pointer; }
+
+/* ------------------------------------------- Product detail: similar products */
+.pdp__similar {
+  margin-top: 48px;
+}
+
+.pdp__similar-grid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 24px;
+  margin-top: 18px;
+}
+
+@media (max-width: 860px) {
+  .pdp__similar-grid {
+    grid-template-columns: 1fr;
+  }
+}

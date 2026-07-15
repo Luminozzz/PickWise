@@ -1,5 +1,6 @@
 import { useEffect, useState } from 'react'
 import Navbar from '../components/Navbar.jsx'
+import ProductCard from '../components/ProductCard.jsx'
 import { fetchProduct } from '../api.js'
 import { colourToHex } from '../colours.js'
 import { ArrowUp, ArrowDown, Minus, ArrowRight } from '../components/icons.jsx'
@@ -82,6 +83,7 @@ export default function ProductPage({ productId, answers, onNavigate }) {
   while (thumbs.length < THUMB_SLOTS) thumbs.push(null)
   const colours = data.colours || []
   const criteria = data.criteria || []
+  const similar = data.similar || []
   const price = money(data.price, data.currency)
 
   return (
@@ -124,7 +126,7 @@ export default function ProductPage({ productId, answers, onNavigate }) {
 
           {/* Info */}
           <div className="pdp__info">
-            <div className="pdp__panel pdp__head">
+            <div className="pdp__head">
               <span className="pdp__brand">{brand}</span>
               <h1 className="pdp__title">{model}</h1>
               <p className="pdp__desc">{data.description}</p>
@@ -148,7 +150,7 @@ export default function ProductPage({ productId, answers, onNavigate }) {
               </div>
             )}
 
-            <div className="pdp__panel pdp__buy">
+            <div className="pdp__buy">
               <span className="pdp__price">
                 {price ? (
                   <>
@@ -226,6 +228,26 @@ export default function ProductPage({ productId, answers, onNavigate }) {
             })}
           </ul>
         </section>
+
+        {/* Nearest alternatives, each tagged with why it's a close match */}
+        {similar.length > 0 && (
+          <section className="pdp__similar">
+            <header className="pdp__specs-head">
+              <span className="pdp__brand pdp__brand--accent">Close Matches</span>
+              <h2 className="pdp__specs-title">See Similar Products</h2>
+            </header>
+            <div className="pdp__similar-grid">
+              {similar.map((s) => (
+                <ProductCard
+                  key={s.id}
+                  item={s}
+                  tags={s.reasons}
+                  onNavigate={onNavigate}
+                />
+              ))}
+            </div>
+          </section>
+        )}
       </main>
     </>
   )
