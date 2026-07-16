@@ -2,4 +2,5 @@
 Extras/
 __pycache__/
 *.pyc
-docs/
+docs/*
+!docs/testing.md
