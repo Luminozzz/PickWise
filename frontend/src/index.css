@@ -1896,7 +1896,19 @@ button {
 .pdp__info {
   display: flex;
   flex-direction: column;
-  gap: 16px;
+  gap: 16px; /* within a group */
+}
+
+/* The panels that used to wrap the head and the buy row are gone, but their
+   24px of inner padding was doing the spacing work — with the 16px gap that put
+   40px between each group, which is the proportion worth keeping. Reproduced
+   here as margin so the rhythm survives without the border or the fill. The
+   colours stay at the base 16px: they read as part of the price block rather
+   than adrift between it and the button. */
+.pdp__tags,
+.pdp__buy,
+.pdp__actions {
+  margin-top: 24px;
 }
 
 .pdp__brand {
@@ -1974,7 +1986,6 @@ button {
   flex-wrap: wrap;
   align-items: center;
   gap: 16px;
-  margin-top: 4px;
 }
 
 .pdp__actions .btn-primary {
