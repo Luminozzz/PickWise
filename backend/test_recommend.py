@@ -1,12 +1,18 @@
 """
-Quick smoke-test for backend/algorithm/recommend.py.
+Regression tests for backend/algorithm/recommend.py.
 
 Run from the backend/ directory:
-    python test_recommend.py
+    python test_recommend.py        # runs every test_* below, exits non-zero on failure
+    pytest test_recommend.py        # same tests, discovered by name
 
 Uses mock Mouse objects so no real database is needed.
 Budget is intentionally omitted from the payload to skip the
 Price_History.query call (which requires a live DB/app context).
+
+These pin *behaviour*, not exact scores: the lightweight mouse must rank first
+for a weight-conscious gamer, results must come back sorted, every candidate
+must survive. Exact score numbers are deliberately not asserted — the scoring
+weights are allowed to change without tripping the whole suite red.
 """
 
 import sys, os
@@ -109,21 +115,75 @@ PAYLOADS = {
 }
 
 
-def run_test(label, payload):
-    print("=" * 60)
-    print(f"  {label}")
-    print("=" * 60)
-    result = recommend(payload, MICE)
-    print(f"Passed hard rules : {result['passed_rules']}")
-    print(f"Failed hard rules : {result['failed_rules']}")
-    print()
+_GAMER = "FPS gamer (medium hand, prefers wireless, lightweight, no RGB)"
+_STUDENT = "Student (small hand, prefers wireless, travels often)"
+
+# Ids in MICE: 1 = 60g Superlight, 2 = 88g DeathAdder, 3 = 141g MX Master, 4 = 95g Basilisk.
+_LIGHTEST, _HEAVIEST = 1, 3
+
+
+def test_gamer_ranks_lightweight_first():
+    """The product's core promise: a weight-conscious FPS gamer sees the 60g
+    Superlight on top and the 141g MX Master at the bottom."""
+    results = recommend(PAYLOADS[_GAMER], MICE)["results"]
+    ids = [m["id"] for m in results]
+    assert ids[0] == _LIGHTEST, f"expected lightest mouse first, got order {ids}"
+    assert ids[-1] == _HEAVIEST, f"expected heaviest mouse last, got order {ids}"
+    by_id = {m["id"]: m for m in results}
+    assert by_id[_LIGHTEST]["score"] > by_id[_HEAVIEST]["score"]
+
+
+def test_student_ranks_heavy_last():
+    """A student who travels often should be steered away from the heavy mouse."""
+    ids = [m["id"] for m in recommend(PAYLOADS[_STUDENT], MICE)["results"]]
+    assert ids[-1] == _HEAVIEST, f"expected heaviest mouse last, got order {ids}"
+
+
+def test_results_sorted_by_score_desc():
+    """Whatever the weights, results always come back best-first."""
+    for label, payload in PAYLOADS.items():
+        scores = [m["score"] for m in recommend(payload, MICE)["results"]]
+        assert scores == sorted(scores, reverse=True), f"{label}: {scores} not descending"
+
+
+def test_every_candidate_survives():
+    """Hard rules reorder but never exclude — every mouse in must come back out."""
+    for label, payload in PAYLOADS.items():
+        ids = {m["id"] for m in recommend(payload, MICE)["results"]}
+        assert ids == {1, 2, 3, 4}, f"{label}: dropped a candidate, got {ids}"
+
+
+def test_result_shape_is_stable():
+    """The frontend reads these keys by name; a rename is a breaking change."""
+    result = recommend(PAYLOADS[_GAMER], MICE)
+    assert isinstance(result["passed_rules"], list)
+    assert isinstance(result["failed_rules"], list)
+    assert set(result["passed_rules"]).isdisjoint(result["failed_rules"])
+    assert result["results"], "expected at least one ranked mouse"
     for m in result["results"]:
-        print(f"  [{m['score']:+.1f}]  {m['brand_name']} {m['product_name']}")
-        for rule_id, explanation in m["explanations"].items():
-            print(f"          {rule_id}: {explanation}")
-        print()
+        for key in ("id", "product_name", "brand_name", "score", "explanations"):
+            assert key in m, f"result missing {key!r}"
+        assert isinstance(m["explanations"], dict)
+
+
+def test_empty_mice_no_crash():
+    """No candidates in -> empty lists out, not an exception."""
+    assert recommend(PAYLOADS[_STUDENT], []) == {
+        "passed_rules": [],
+        "failed_rules": [],
+        "results": [],
+    }
+
+
+def test_empty_payload_returns_all():
+    """No answers -> nothing to fail -> every mouse still returned."""
+    ids = {m["id"] for m in recommend({}, MICE)["results"]}
+    assert ids == {1, 2, 3, 4}
 
 
 if __name__ == "__main__":
-    for label, payload in PAYLOADS.items():
-        run_test(label, payload)
+    _tests = [v for k, v in sorted(globals().items()) if k.startswith("test_") and callable(v)]
+    for _t in _tests:
+        _t()
+        print("OK", _t.__name__)
+    print("ALL PASSED")

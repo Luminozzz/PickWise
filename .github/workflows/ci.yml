@@ -1,0 +1,67 @@
+name: CI
+
+# Runs on every push to any branch, and on every pull request.
+on:
+  push:
+  pull_request:
+
+# A newer push to the same branch cancels an in-flight run for it, so CI
+# always reflects the latest commit instead of piling up stale runs.
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  backend:
+    name: Backend tests
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+          cache: pip
+          cache-dependency-path: backend/requirements.txt
+
+      - name: Install dependencies
+        working-directory: backend
+        run: pip install -r requirements.txt
+
+      # Each test_*.py is run as its own process on purpose: the DB engine is
+      # built at import time, and test_profile.py needs its own throwaway SQLite
+      # bound before models import. Separate processes keep that isolation, and
+      # any assertion failure exits non-zero, which fails the step.
+      - name: Run backend tests
+        working-directory: backend
+        run: |
+          for f in test_*.py; do
+            echo "::group::$f"
+            python "$f"
+            echo "::endgroup::"
+          done
+
+  frontend:
+    name: Frontend tests + build
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+          cache: npm
+          cache-dependency-path: frontend/package-lock.json
+
+      - name: Install dependencies
+        working-directory: frontend
+        run: npm ci
+
+      - name: Run tests
+        working-directory: frontend
+        run: npm test
+
+      # A build that no longer compiles is a regression too — catch it here.
+      - name: Build
+        working-directory: frontend
+        run: npm run build
