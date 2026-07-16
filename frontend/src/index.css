@@ -491,15 +491,12 @@ button {
 }
 
 .card__action--primary {
-  background: linear-gradient(90deg, var(--primary), var(--secondary));
-  -webkit-background-clip: text;
-  background-clip: text;
-  color: transparent;
+  color: var(--primary);
   transition: opacity 0.15s ease;
 }
 
 .card__action--primary svg {
-  color: var(--secondary);
+  color: var(--primary);
 }
 
 .card__action--primary:hover {
@@ -667,10 +664,7 @@ button {
   font-weight: 700;
   letter-spacing: 0.01em;
   text-transform: none;
-  color: transparent;
-  background: linear-gradient(90deg, var(--primary), var(--secondary));
-  -webkit-background-clip: text;
-  background-clip: text;
+  color: var(--text-secondary);
 }
 
 .quiz__step {
@@ -1921,10 +1915,7 @@ button {
 }
 
 .pdp__brand--accent {
-  color: transparent;
-  background: linear-gradient(90deg, var(--primary), var(--secondary));
-  -webkit-background-clip: text;
-  background-clip: text;
+  color: var(--primary);
 }
 
 .pdp__title {
@@ -2380,7 +2371,9 @@ button {
   background: var(--surface-raised);
   border: 1px solid var(--border-strong);
   border-radius: var(--radius);
-  box-shadow: 0 24px 64px rgba(0, 0, 0, 0.5);
+  /* A 0.72 scrim already darkens the page behind the dialog, so this only needs
+     to lift the panel off it — a real elevation, not a room-sized fog. */
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.35);
 }
 
 .picker__head {
