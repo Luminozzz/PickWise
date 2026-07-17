@@ -108,6 +108,7 @@ def _shape(row):
         "number_of_buttons": r["number_of_buttons"],
         "min_battery_life": r["min_battery_life"],
         "max_battery_life": r["max_battery_life"],
+        "max_polling_rate": r["max_polling_rate"],
         "other_features": r["other_features"],
         "connectivity": connectivity,
         "gaming": gaming,
