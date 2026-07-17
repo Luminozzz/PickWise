@@ -8,7 +8,7 @@ from sqlalchemy.orm import joinedload
 from algorithm.recommend import build_facts, compare_detail
 from app.routers.product import _description
 from app.routers.recommend import build_payload
-from database.models import SessionLocal, Mouse, Price_History
+from database.models import SessionLocal, Mouse, Mouse_Skins, Price_History
 
 api_router = APIRouter()
 
@@ -63,9 +63,12 @@ def compare_route(body: dict = Body(default=None)):
         currency = None
         ratings = {}
         for mouse in mice:
+            # Price_History.mouse_id points at a specific Mouse_Skins row, not
+            # the mouse directly - resolve back through the skin.
             price_row = (
                 session.query(Price_History)
-                .filter_by(mouse_id=mouse.id)
+                .join(Mouse_Skins, Price_History.mouse_id == Mouse_Skins.id)
+                .filter(Mouse_Skins.mouse_id == mouse.id)
                 .order_by(Price_History.date.desc(), Price_History.price.asc())
                 .first()
             )
@@ -75,8 +78,9 @@ def compare_route(body: dict = Body(default=None)):
 
             rating_row = (
                 session.query(Price_History)
+                .join(Mouse_Skins, Price_History.mouse_id == Mouse_Skins.id)
                 .filter(
-                    Price_History.mouse_id == mouse.id,
+                    Mouse_Skins.mouse_id == mouse.id,
                     Price_History.num_of_stars.isnot(None),
                 )
                 .order_by(Price_History.num_of_reviews.desc())
