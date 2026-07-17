@@ -78,6 +78,7 @@ def build_payload(answers: dict) -> dict:
         "sensitivity": get(20),
         "colour": None if get(21) == "none" else get(21),
         "brand_pref": get(18),
+        "value_priority": get(22),
     }
 
 

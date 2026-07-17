@@ -89,6 +89,59 @@ def _budget_explanation(facts: dict, mouse) -> str:
     return f"Priced at ${price:.2f}, this mouse fits within your budget of ${budget[0]:.2f}–${budget[1]:.2f}"
 
 
+# ── Value for money (soft) ────────────────────────────────────────────────────
+# A continuous nudge that rewards a lower price: +ve below the budget top,
+# 0 at the top, -ve above it — normalised by the budget span so it's more
+# sensitive for tighter budgets. Independent of the hard budget filter and the
+# 25% price-tag band, which are left untouched.
+
+# Q22: "do you value price or performance more?" scales how much the value rule
+# and the performance rules contribute to the score.
+def _value_priority(facts: dict):
+    return facts.get("value_priority")
+
+def _price_emphasis(facts: dict) -> float:
+    priority = _value_priority(facts)
+    if priority == "price":
+        return config.PRICE_EMPHASIS
+    if priority == "performance":
+        return config.PRICE_DEEMPHASIS
+    return 1.0
+
+def _performance_emphasis(facts: dict) -> float:
+    priority = _value_priority(facts)
+    if priority == "performance":
+        return config.PERF_EMPHASIS
+    if priority == "price":
+        return config.PERF_DEEMPHASIS
+    return 1.0
+
+def _value_weight(facts: dict, mouse) -> float:
+    budget = facts.get("budget")
+    if budget is None:
+        return 0.0
+    price = _price_of(facts, mouse)
+    if price is None:
+        return 0.0
+    low, high = budget
+    span = (high - low) or high or 1.0
+    relative = (high - price) / span   # +1 at the budget floor, 0 at the ceiling
+    relative = max(-1.5, min(1.5, relative))
+    return relative * config.VALUE_FACTOR * _price_emphasis(facts)
+
+def _value_explanation(facts: dict, mouse) -> str:
+    budget = facts.get("budget")
+    price = _price_of(facts, mouse)
+    if budget is None or price is None:
+        return "No budget set to judge value against"
+    low, high = budget
+    if price <= low:
+        return f"At ${price:.2f} this is at the low end of your budget — strong value for money"
+    if price <= high:
+        return f"At ${price:.2f} this sits comfortably inside your ${low:.0f}–${high:.0f} budget"
+    return f"At ${price:.2f} this is above your ${high:.0f} budget — you're paying a premium for it"
+
+
 _CONN_LABEL = {
     Connectivity.STRICTLY_WIRELESS: "strictly wireless",
     Connectivity.BOTH: "wired + wireless",
@@ -258,6 +311,16 @@ GENERAL_RULES: dict[str, Rule] = {
         explanation=_budget_explanation,
     ),
 
+    config.VALUE: Rule(
+        id=config.VALUE,
+        rule_type=RuleType.SOFT,
+        description="Cheaper mice score higher for value for money",
+        applicable_to_users=lambda facts: facts.get("budget") is not None,
+        mouse_compatibility=True,
+        weight=_value_weight,
+        explanation=_value_explanation,
+    ),
+
     config.LEFT_HANDED: Rule(
         id=config.LEFT_HANDED,
         rule_type=RuleType.HARD,
@@ -293,6 +356,9 @@ def _type_of_game_compatibility(facts: dict, mouse) -> bool:
     return True
 
 def _type_of_game_weight(facts: dict, mouse) -> float:
+    return _type_of_game_points(facts, mouse) * _performance_emphasis(facts)
+
+def _type_of_game_points(facts: dict, mouse) -> float:
     type_of_game = facts.get("type_of_game")
     gaming_mouse_specs = mouse.gaming_specs
     if gaming_mouse_specs is not None:
@@ -390,10 +456,12 @@ def _type_of_game_explanation(facts: dict, mouse) -> str:
 def _mouse_weight_weightage(facts: dict, mouse) -> float:
     weight = mouse.weight
     if weight <= config.LIGHT_WEIGHT:
-        return config.MAJOR_FACTOR
+        base = config.MAJOR_FACTOR
     elif weight <= config.MODERATE_WEIGHT:
-        return config.NORMAL_FACTOR
-    return 0.0
+        base = config.NORMAL_FACTOR
+    else:
+        base = 0.0
+    return base * _performance_emphasis(facts)
 
 def _mouse_weight_explanation(facts: dict, mouse) -> str:
     weight = mouse.weight

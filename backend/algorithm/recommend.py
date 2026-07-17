@@ -51,6 +51,10 @@ CRITERION_LABELS = {
 # "neutral" near-miss rather than a hard "doesn't fit".
 BUDGET_NEUTRAL_BAND = 0.25
 
+# Rules that score but shouldn't surface their own chip — value-for-money feeds
+# the ranking, while the price chip stays the BUDGET 25%-band tag.
+_HIDDEN_FROM_TAGS = {config.VALUE}
+
 
 def _connectivity(wireless_value, wired_too):
     """Combine the wireless preference (Q15) and the wired-too follow-up (Q16)
@@ -120,19 +124,26 @@ def _build_facts(payload: dict) -> dict:
     wireless_value = payload.get("wireless")
 
     return {
-        "hand_size":_enum(Hand_Size, payload.get("hand_size")),
-        "wireless":_enum(Preferability, payload.get("wireless")),
-        "budget":(float(budget_min), float(budget_max))
-                if budget_min is not None and budget_max is not None
-                else None,
-        "left_hand":payload.get("left_hand"),
-        "user_type":_enum(User_Type, payload.get("user_type")),
-        "type_of_game":_enum(Game_Type, payload.get("type_of_game")),
-        "light_weight":payload.get("light_weight"),
-        "rgb":payload.get("rgb"),
-        "travel_portability":_enum(Usage, payload.get("travel_portability")),
-        "extra_buttons":_enum(Preferability, payload.get("extra_buttons")),
-        "hours_worked":_enum(Usage, payload.get("hours_worked")),
+        "hand_size":          _enum(Hand_Size, payload.get("hand_size")),
+        "wireless":           _enum(Preferability, wireless_value),
+        "connectivity":       _connectivity(wireless_value, payload.get("wired_too")),
+        # a definitive yes/no filters; "preferably" only scores
+        "connectivity_strict": wireless_value in ("yes", "no"),
+        "budget":             (float(budget_min), float(budget_max))
+                              if budget_min is not None and budget_max is not None
+                              else None,
+        "left_hand":          payload.get("left_hand"),
+        "user_type":          _enum(User_Type, payload.get("user_type")),
+        "type_of_game":       _enum(Game_Type, payload.get("type_of_game")),
+        "light_weight":       payload.get("light_weight"),
+        "rgb":                payload.get("rgb"),
+        "travel_portability": _enum(Usage, payload.get("travel_portability")),
+        "extra_buttons":      _enum(Preferability, payload.get("extra_buttons")),
+        "hours_worked":       _enum(Usage, payload.get("hours_worked")),
+        # preloaded {mouse_id: price} so budget scoring needs no per-mouse query
+        "prices":             payload.get("prices"),
+        # Q22: "price" | "performance" | "balance" — scales value vs performance
+        "value_priority":     payload.get("value_priority"),
     }
 
 
@@ -327,6 +338,8 @@ def _criteria(facts: dict, mouse, bundle, applicable_rules: list) -> list:
     and the full explanation (used as the tag's tooltip on the frontend)."""
     out = []
     for rule in applicable_rules:
+        if rule.id in _HIDDEN_FROM_TAGS:
+            continue
         status = _criterion_status(facts, mouse, rule, bundle)
         out.append({
             "label": _criterion_label(facts, mouse, rule, status),
@@ -356,3 +369,200 @@ def _format_mice(facts: dict, bundle, applicable_rules: list, soft_rules: list) 
 
     results.sort(key=lambda m: m["score"], reverse=True)
     return results
+
+
+# ── Product detail page ───────────────────────────────────────────────────────
+# A single mouse, with its specs ordered by how much they matter to the user and
+# each tagged fit/unfit/neutral against the user's answers. "none" means there's
+# no preference to judge the spec against (no questionnaire, or an unrelated spec).
+
+def build_facts(payload: dict) -> dict:
+    """Public wrapper around the payload -> facts mapping."""
+    return _build_facts(payload)
+
+
+def _status_for(facts: dict, mouse, rule) -> str:
+    """fit | unfit | neutral for one rule against a single mouse (no bundle)."""
+    if rule.id == config.BUDGET:
+        budget_status = _budget_status(facts, mouse)
+        if budget_status is not None:
+            return budget_status
+    rule_type = rule.rule_type(facts) if callable(rule.rule_type) else rule.rule_type
+    if rule_type == RuleType.HARD:
+        compatible = rule.mouse_compatibility
+        ok = compatible(facts, mouse) if callable(compatible) else bool(compatible)
+        return "fit" if ok else "unfit"
+    points = rule.points(facts, mouse)
+    if points > 0:
+        return "fit"
+    if points < 0:
+        return "unfit"
+    return "neutral"
+
+
+def _spec_weight(m, facts):
+    w = getattr(m, "weight", None)
+    return f"{w:g} g" if w else None
+
+def _spec_dpi(m, facts):
+    d = getattr(m, "max_DPI", None)
+    return f"{d:,}" if d else None
+
+def _spec_polling(m, facts):
+    p = getattr(m, "max_polling_rate", None)
+    return f"{p:,} Hz" if p else None
+
+def _spec_buttons(m, facts):
+    b = getattr(m, "number_of_buttons", None)
+    return str(b) if b else None
+
+def _spec_connectivity(m, facts):
+    label = _label_connectivity(facts, m, None)
+    return None if label == "Connectivity" else label
+
+def _spec_battery(m, facts):
+    lo = getattr(m, "min_battery_life", None)
+    hi = getattr(m, "max_battery_life", None)
+    if not lo and not hi:
+        return None
+    if lo and hi and lo != hi:
+        return f"{lo}–{hi} h"
+    return f"{lo or hi} h"
+
+def _spec_size(m, facts):
+    length = getattr(m, "length", None)
+    width = getattr(m, "width", None)
+    height = getattr(m, "height", None)
+    if not (length and width and height):
+        return None
+    return f"{length:g} × {width:g} × {height:g} mm"
+
+def _spec_tracking(m, facts):
+    gaming = getattr(m, "gaming_specs", None)
+    ts = getattr(gaming, "tracking_speed", None) if gaming else None
+    return f"{ts:,} IPS" if ts else None
+
+def _spec_ergonomy(m, facts):
+    ergo = getattr(m, "ergonomy", None)
+    value = getattr(ergo, "value", None)
+    if not value or value == "none":
+        return None
+    return value.capitalize()
+
+def _spec_rgb(m, facts):
+    gaming = getattr(m, "gaming_specs", None)
+    if gaming is None:
+        return None
+    return "Yes" if gaming.rgb else "No"
+
+def _spec_left(m, facts):
+    return "Yes" if getattr(m, "left_fit", False) else "No"
+
+def _spec_price(m, facts):
+    prices = facts.get("prices") or {}
+    price = prices.get(getattr(m, "id", None))
+    if price is None:
+        return None
+    currency = facts.get("currency") or "$"
+    return f"{currency}{price:g}"
+
+
+# key, label, value(mouse, facts), rule id the spec's fit is judged by (or None)
+_SPECS = [
+    ("weight", "Weight", _spec_weight, config.LIGHT_WEIGHT_MOUSE),
+    ("max_DPI", "Max DPI", _spec_dpi, config.TYPE_OF_GAME),
+    ("polling", "Polling rate", _spec_polling, config.TYPE_OF_GAME),
+    ("tracking", "Tracking speed", _spec_tracking, config.TYPE_OF_GAME),
+    ("buttons", "Buttons", _spec_buttons, config.EXTRA_BUTTONS_REQUIRED),
+    ("connectivity", "Connectivity", _spec_connectivity, config.CONNECTIVITY),
+    ("battery", "Battery life", _spec_battery, config.USER_TYPE),
+    ("size", "Dimensions", _spec_size, config.HAND_SIZE),
+    ("ergonomy", "Shape", _spec_ergonomy, config.LONG_HOURS),
+    ("rgb", "RGB lighting", _spec_rgb, config.RGB_LIGHTING),
+    ("left", "Left-handed use", _spec_left, config.LEFT_HANDED),
+    ("price", "Price", _spec_price, config.BUDGET),
+]
+
+# Spec display order by user type (most important first). Keys not listed fall
+# to the end in their natural order.
+_IMPORTANCE = {
+    User_Type.GAMER: ["max_DPI", "polling", "weight", "tracking", "buttons", "rgb",
+                      "connectivity", "price", "battery", "size", "ergonomy", "left"],
+    User_Type.OFFICE_WORKER: ["ergonomy", "buttons", "battery", "connectivity", "price",
+                              "weight", "size", "left", "max_DPI", "polling", "rgb", "tracking"],
+    User_Type.STUDENT: ["weight", "connectivity", "battery", "price", "buttons", "size",
+                        "ergonomy", "left", "max_DPI", "polling", "rgb", "tracking"],
+}
+_DEFAULT_ORDER = ["price", "connectivity", "weight", "buttons", "max_DPI", "polling",
+                  "battery", "ergonomy", "size", "rgb", "tracking", "left"]
+
+
+def product_detail(mouse, facts: dict) -> dict:
+    """For one mouse: hero criteria tags + spec rows ordered by importance to the
+    user, each spec tagged fit/unfit/neutral/none against the answers."""
+    rules = _select_rules(facts)
+    applicable = [r for r in rules if r.applicable_to_users(facts)]
+    status_by_rule = {r.id: _status_for(facts, mouse, r) for r in applicable}
+
+    order = _IMPORTANCE.get(facts.get("user_type"), _DEFAULT_ORDER)
+    last = len(order)
+
+    rows = []
+    for key, label, value_fn, rule_id in _SPECS:
+        value = value_fn(mouse, facts)
+        if value is None:
+            continue
+        status = status_by_rule.get(rule_id, "none")
+        rows.append({"key": key, "label": label, "value": value, "status": status})
+
+    rows.sort(key=lambda r: order.index(r["key"]) if r["key"] in order else last)
+
+    criteria = [
+        {
+            "label": _criterion_label(facts, mouse, r, status_by_rule[r.id]),
+            "status": status_by_rule[r.id],
+            "detail": r.explain(facts, mouse),
+        }
+        for r in applicable
+        if r.id not in _HIDDEN_FROM_TAGS
+    ]
+
+    return {"details": rows, "criteria": criteria}
+
+
+def compare_detail(mice: list, facts: dict) -> list:
+    """The same spec rows for several mice, ordered by importance to the user.
+
+    Mice don't all carry the same specs — an office mouse has no tracking speed,
+    a wired one no battery — and product_detail() drops a row entirely when a
+    value is None. Zipping those per-mouse lists in the UI would silently
+    misalign the columns, so the rows are built here as the union of what the
+    group has: a mouse missing a spec gets a null cell instead of the row
+    vanishing for everyone. Ordering reuses the same importance list as the
+    product page, so an unanswered quiz falls back to _DEFAULT_ORDER.
+    """
+    applicable = [r for r in _select_rules(facts) if r.applicable_to_users(facts)]
+    order = _IMPORTANCE.get(facts.get("user_type"), _DEFAULT_ORDER)
+    last = len(order)
+
+    cells_by_mouse = []
+    for mouse in mice:
+        status_by_rule = {r.id: _status_for(facts, mouse, r) for r in applicable}
+        cells = {}
+        for key, _label, value_fn, rule_id in _SPECS:
+            value = value_fn(mouse, facts)
+            cells[key] = {
+                "value": value,
+                # A spec this mouse doesn't have can't fit or misfit.
+                "status": status_by_rule.get(rule_id, "none") if value is not None else "none",
+            }
+        cells_by_mouse.append(cells)
+
+    rows = [
+        {"key": key, "label": label, "cells": [c[key] for c in cells_by_mouse]}
+        for key, label, _value_fn, _rule_id in _SPECS
+        # Drop a row only when nobody in the group has it.
+        if any(c[key]["value"] is not None for c in cells_by_mouse)
+    ]
+    rows.sort(key=lambda r: order.index(r["key"]) if r["key"] in order else last)
+    return rows

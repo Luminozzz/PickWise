@@ -491,15 +491,12 @@ button {
 }
 
 .card__action--primary {
-  background: linear-gradient(90deg, var(--primary), var(--secondary));
-  -webkit-background-clip: text;
-  background-clip: text;
-  color: transparent;
+  color: var(--primary);
   transition: opacity 0.15s ease;
 }
 
 .card__action--primary svg {
-  color: var(--secondary);
+  color: var(--primary);
 }
 
 .card__action--primary:hover {
@@ -667,10 +664,7 @@ button {
   font-weight: 700;
   letter-spacing: 0.01em;
   text-transform: none;
-  color: transparent;
-  background: linear-gradient(90deg, var(--primary), var(--secondary));
-  -webkit-background-clip: text;
-  background-clip: text;
+  color: var(--text-secondary);
 }
 
 .quiz__step {
@@ -1302,6 +1296,12 @@ button {
   margin-top: 28px;
 }
 
+/* Same actions row, but sitting under the header rather than after the results. */
+.recs__actions--top {
+  margin-top: 18px;
+  flex-wrap: wrap;
+}
+
 @media (max-width: 560px) {
   .rec__why {
     display: none;
@@ -1381,12 +1381,21 @@ button {
   margin-top: 28px;
 }
 
-/* Persona swipe: when the user type changes, the outgoing fields glide out to
-   the right while the incoming fields drift in from the left, and the section
-   height eases between the two so the page below settles smoothly. */
+/* Persona swipe: when the user type changes, the whole card glides out to the
+   right while the incoming card drifts in from the left, and the wrapper height
+   eases between the two so the page below settles smoothly. The wrapper is just
+   a positioning/height frame — each layer is a full .profile__section card, so
+   the border, surface and padding travel with the swipe. */
 .profile__swap {
   position: relative;
+  margin-bottom: 28px;
   transition: height 0.6s cubic-bezier(0.5, 0.05, 0.2, 1);
+}
+
+/* The cards now ARE the swipe layers, so the wrapper owns the spacing below and
+   the cards drop their own bottom margin. */
+.profile__swap .profile__section--persona {
+  margin-bottom: 0;
 }
 
 .profile__swap[data-swapping] {
@@ -1399,32 +1408,34 @@ button {
   left: 0;
   right: 0;
   pointer-events: none;
-  animation: personaSwipeOut 0.6s cubic-bezier(0.5, 0.05, 0.2, 1) both;
+  animation: personaCardOut 0.6s cubic-bezier(0.5, 0.05, 0.2, 1) both;
 }
 
 .profile__swap-layer--in {
-  animation: personaSwipeIn 0.6s cubic-bezier(0.5, 0.05, 0.2, 1) both;
+  animation: personaCardIn 0.6s cubic-bezier(0.5, 0.05, 0.2, 1) both;
 }
 
-@keyframes personaSwipeOut {
+/* A slight recede (scale) as the card nears the edge makes the whole panel read
+   like a comet drifting past, not just a flat horizontal pan. */
+@keyframes personaCardOut {
   from {
     opacity: 1;
-    transform: translateX(0);
+    transform: translateX(0) scale(1);
   }
   to {
     opacity: 0;
-    transform: translateX(56px);
+    transform: translateX(60px) scale(0.965);
   }
 }
 
-@keyframes personaSwipeIn {
+@keyframes personaCardIn {
   from {
     opacity: 0;
-    transform: translateX(-56px);
+    transform: translateX(-60px) scale(0.965);
   }
   to {
     opacity: 1;
-    transform: translateX(0);
+    transform: translateX(0) scale(1);
   }
 }
 
@@ -1781,4 +1792,718 @@ button {
 .filter-clear:focus-visible {
   outline: none;
   box-shadow: 0 0 0 2px var(--bg), 0 0 0 4px var(--primary);
+}
+
+/* ---------------------------------------------------- Product detail page */
+.pdp {
+  max-width: var(--content-max);
+  margin: 0 auto;
+  padding: 24px 24px 96px;
+}
+
+.pdp__back {
+  background: none;
+  border: 1px solid var(--border);
+  border-radius: var(--radius-sm);
+  padding: 8px 16px;
+  margin-bottom: 24px;
+  font-size: 14px;
+  color: var(--text-secondary);
+  transition: color 0.15s ease, border-color 0.15s ease;
+}
+
+.pdp__back:hover {
+  color: var(--text-primary);
+  border-color: var(--border-strong);
+}
+
+.pdp__hero {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 32px;
+  align-items: start;
+}
+
+@media (max-width: 860px) {
+  .pdp__hero {
+    grid-template-columns: 1fr;
+  }
+}
+
+/* Gallery */
+.pdp__image {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  height: 440px;
+  padding: 24px;
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+}
+
+.pdp__image img {
+  max-width: 100%;
+  max-height: 100%;
+  object-fit: contain;
+}
+
+.pdp__thumbs {
+  display: grid;
+  grid-template-columns: repeat(5, 1fr);
+  gap: 12px;
+  margin-top: 14px;
+}
+
+.pdp__thumb {
+  aspect-ratio: 1 / 1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 8px;
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-sm);
+  transition: border-color 0.15s ease;
+}
+
+.pdp__thumb:hover:not(:disabled) {
+  border-color: var(--border-strong);
+}
+
+.pdp__thumb.is-active {
+  border-color: var(--primary);
+}
+
+.pdp__thumb img {
+  max-width: 100%;
+  max-height: 100%;
+  object-fit: contain;
+}
+
+.pdp__thumb--empty {
+  cursor: default;
+  opacity: 0.5;
+}
+
+/* Info column */
+.pdp__info {
+  display: flex;
+  flex-direction: column;
+  gap: 16px; /* within a group */
+}
+
+/* The panels that used to wrap the head and the buy row are gone, but their
+   24px of inner padding was doing the spacing work — with the 16px gap that put
+   40px between each group, which is the proportion worth keeping. Reproduced
+   here as margin so the rhythm survives without the border or the fill. The
+   colours stay at the base 16px: they read as part of the price block rather
+   than adrift between it and the button. */
+.pdp__tags,
+.pdp__buy,
+.pdp__actions {
+  margin-top: 24px;
+}
+
+.pdp__brand {
+  display: block;
+  font-size: 13px;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--text-muted);
+}
+
+.pdp__brand--accent {
+  color: var(--primary);
+}
+
+.pdp__title {
+  margin: 6px 0 12px;
+  font-size: 34px;
+  font-weight: 700;
+  line-height: 1.1;
+  color: var(--text-primary);
+}
+
+.pdp__desc {
+  margin: 0;
+  font-size: 17px;
+  color: var(--text-secondary);
+}
+
+.pdp__tags {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.pdp__tags .rec-tag {
+  font-size: 13px;
+  padding: 5px 13px 5px 10px;
+}
+
+.pdp__buy {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+}
+
+.pdp__price {
+  font-size: 28px;
+  font-weight: 700;
+  color: var(--text-primary);
+}
+
+.pdp__buy .card__rating {
+  font-size: 16px;
+}
+
+.pdp__colours {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 0 4px;
+}
+
+.swatch--lg {
+  width: 28px;
+  height: 28px;
+}
+
+.pdp__actions {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 16px;
+}
+
+.pdp__actions .btn-primary {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+}
+
+/* Spec detail list — ordered by importance, fit arrow on the left */
+.pdp__specs {
+  margin-top: 48px;
+}
+
+.pdp__specs-title {
+  margin: 6px 0 0;
+  font-size: 24px;
+  font-weight: 700;
+  color: var(--text-primary);
+}
+
+.pdp__spec-list {
+  list-style: none;
+  margin: 18px 0 0;
+  padding: 0;
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  overflow: hidden;
+}
+
+.pdp__spec {
+  display: grid;
+  grid-template-columns: 24px 1fr auto;
+  align-items: center;
+  gap: 12px;
+  padding: 15px 20px;
+  border-top: 1px solid var(--border);
+  font-size: 15px;
+}
+
+.pdp__spec:first-child {
+  border-top: none;
+}
+
+.pdp__spec-arrow {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.pdp__spec--fit .pdp__spec-arrow {
+  color: #57d9a3;
+}
+
+.pdp__spec--unfit .pdp__spec-arrow {
+  color: #e25168;
+}
+
+.pdp__spec--neutral .pdp__spec-arrow {
+  color: #e8c15e;
+}
+
+.pdp__spec--fit {
+  box-shadow: inset 3px 0 0 rgba(87, 217, 163, 0.55);
+}
+
+.pdp__spec--unfit {
+  box-shadow: inset 3px 0 0 rgba(226, 81, 104, 0.55);
+}
+
+.pdp__spec--neutral {
+  box-shadow: inset 3px 0 0 rgba(232, 193, 94, 0.55);
+}
+
+.pdp__spec-label {
+  color: var(--text-secondary);
+}
+
+.pdp__spec-value {
+  font-weight: 600;
+  color: var(--text-primary);
+  text-align: right;
+}
+
+/* Clickable catalogue card / list row -> product detail page */
+.card--clickable { cursor: pointer; }
+.rec--clickable { cursor: pointer; }
+
+/* Text for screen readers only — carries cues that are otherwise colour/icon. */
+.sr-only {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  margin: -1px;
+  padding: 0;
+  overflow: hidden;
+  clip: rect(0, 0, 0, 0);
+  white-space: nowrap;
+  border: 0;
+}
+
+/* ------------------------------------------------------ Compare (side by side) */
+.cmp {
+  max-width: var(--content-max);
+  margin: 0 auto;
+  padding: 32px 24px 96px;
+}
+
+.cmp__head {
+  margin-bottom: 24px;
+}
+
+.cmp__title {
+  margin: 6px 0 8px;
+  font-size: 26px;
+  font-weight: 700;
+  color: var(--text-primary);
+}
+
+.cmp__lead {
+  margin: 0 0 12px;
+  font-size: 14.5px;
+  color: var(--text-secondary);
+}
+
+.cmp__note,
+.cmp__empty {
+  color: var(--text-muted);
+  font-size: 14px;
+}
+
+.cmp__empty {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 16px;
+  padding: 48px 0;
+}
+
+/* One template for the header and every row, so columns can never drift apart.
+   --cmp-cols is set inline from the product count. */
+.cmp__grid {
+  --cmp-label: 150px;
+  display: flex;
+  flex-direction: column;
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  /* No overflow:hidden here — it would clip the rounded corners nicely but also
+     silently kill position:sticky on the header row. The edge rows round
+     themselves instead. */
+}
+
+.cmp__row {
+  display: grid;
+  grid-template-columns: var(--cmp-label) repeat(var(--cmp-cols, 2), minmax(0, 1fr));
+  border-top: 1px solid var(--border);
+}
+
+.cmp__row:first-child {
+  border-top: none;
+}
+
+/* Zebra striping keeps the eye on one spec while scanning across columns. */
+.cmp__row:nth-child(even of :not(.cmp__row--head)) {
+  background: rgba(255, 255, 255, 0.015);
+}
+
+.cmp__row--head {
+  background: var(--surface);
+  position: sticky;
+  top: 0;
+  z-index: 2;
+  border-radius: calc(var(--radius) - 1px) calc(var(--radius) - 1px) 0 0;
+}
+
+.cmp__row:last-child {
+  border-radius: 0 0 calc(var(--radius) - 1px) calc(var(--radius) - 1px);
+}
+
+.cmp__rowlabel {
+  display: flex;
+  align-items: center;
+  padding: 14px 18px;
+  font-size: 13.5px;
+  font-weight: 600;
+  color: var(--text-muted);
+  border-right: 1px solid var(--border);
+}
+
+.cmp__col {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 6px;
+  padding: 18px 14px 16px;
+  border-right: 1px solid var(--border);
+  text-align: center;
+}
+
+.cmp__col:last-child,
+.cmp__cell:last-child {
+  border-right: none;
+}
+
+.cmp__thumb {
+  width: 100%;
+  height: 110px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: none;
+  border: none;
+  padding: 0;
+}
+
+.cmp__thumb img {
+  max-width: 100%;
+  max-height: 100%;
+  object-fit: contain;
+}
+
+.cmp__brand {
+  font-size: 11.5px;
+  font-weight: 700;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: var(--text-muted);
+}
+
+.cmp__name {
+  background: none;
+  border: none;
+  padding: 0;
+  font-size: 15.5px;
+  font-weight: 700;
+  line-height: 1.25;
+  color: var(--text-primary);
+  text-align: center;
+}
+
+.cmp__name:hover {
+  color: var(--primary);
+}
+
+.cmp__price {
+  font-size: 17px;
+  font-weight: 700;
+  color: var(--text-primary);
+}
+
+.cmp__remove {
+  position: absolute;
+  top: 6px;
+  right: 8px;
+  /* 24px floor: this control lives on the mobile layout too. */
+  width: 26px;
+  height: 26px;
+  border-radius: 50%;
+  background: var(--surface-raised);
+  border: 1px solid var(--border);
+  color: var(--text-muted);
+  font-size: 14px;
+  line-height: 1;
+}
+
+.cmp__remove:hover {
+  color: var(--danger);
+  border-color: var(--danger);
+}
+
+.cmp__swap {
+  margin-top: 2px;
+  background: none;
+  border: none;
+  padding: 2px 4px;
+  font-size: 12.5px;
+  font-weight: 600;
+  color: var(--primary);
+}
+
+.cmp__col--add {
+  justify-content: center;
+}
+
+.cmp__add {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  width: 100%;
+  min-height: 180px;
+  padding: 16px;
+  border: 1px dashed var(--border-strong);
+  border-radius: var(--radius-sm);
+  background: none;
+  color: var(--text-secondary);
+  font-size: 13.5px;
+  font-weight: 600;
+}
+
+.cmp__add:hover {
+  color: var(--primary);
+  border-color: var(--primary);
+}
+
+.cmp__add-plus {
+  font-size: 22px;
+  line-height: 1;
+}
+
+.cmp__cell {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  padding: 14px 12px;
+  font-size: 14.5px;
+  color: var(--text-primary);
+  border-right: 1px solid var(--border);
+  text-align: center;
+}
+
+.cmp__cell-na {
+  color: var(--text-muted);
+}
+
+.cmp__cell-arrow {
+  display: inline-flex;
+  align-items: center;
+}
+
+/* Same fit language as the product page's spec list. */
+.cmp__cell--fit .cmp__cell-arrow {
+  color: #57d9a3;
+}
+
+.cmp__cell--unfit .cmp__cell-arrow {
+  color: #e25168;
+}
+
+.cmp__cell--neutral .cmp__cell-arrow {
+  color: #e8c15e;
+}
+
+.cmp__cell--fit {
+  box-shadow: inset 0 0 0 1px rgba(87, 217, 163, 0.18);
+}
+
+@media (max-width: 860px) {
+  .cmp__grid {
+    --cmp-label: 108px;
+  }
+  .cmp__rowlabel {
+    padding: 12px;
+    font-size: 12.5px;
+  }
+  .cmp__cell {
+    font-size: 13px;
+    padding: 12px 8px;
+  }
+  .cmp__thumb {
+    height: 78px;
+  }
+}
+
+/* ------------------------------------------------------------ Compare picker */
+.picker {
+  position: fixed;
+  inset: 0;
+  z-index: 40;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 24px;
+}
+
+.picker__scrim {
+  position: absolute;
+  inset: 0;
+  background: rgba(3, 4, 14, 0.72);
+}
+
+.picker__panel {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  width: min(560px, 100%);
+  max-height: min(70vh, 640px);
+  padding: 20px;
+  background: var(--surface-raised);
+  border: 1px solid var(--border-strong);
+  border-radius: var(--radius);
+  /* A 0.72 scrim already darkens the page behind the dialog, so this only needs
+     to lift the panel off it — a real elevation, not a room-sized fog. */
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.35);
+}
+
+.picker__head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 14px;
+}
+
+.picker__title {
+  margin: 0;
+  font-size: 18px;
+  font-weight: 700;
+  color: var(--text-primary);
+}
+
+.picker__close {
+  width: 28px;
+  height: 28px;
+  border-radius: 50%;
+  background: none;
+  border: 1px solid var(--border);
+  color: var(--text-secondary);
+  font-size: 16px;
+  line-height: 1;
+}
+
+.picker__search {
+  width: 100%;
+  padding: 10px 14px;
+  margin-bottom: 12px;
+  border-radius: var(--radius-sm);
+  border: 1px solid var(--border);
+  background: var(--surface);
+  color: var(--text-primary);
+  font: inherit;
+  font-size: 14.5px;
+}
+
+.picker__search:focus {
+  outline: none;
+  border-color: var(--primary);
+}
+
+.picker__list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  overflow-y: auto;
+}
+
+.picker__item {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  width: 100%;
+  padding: 8px 10px;
+  border-radius: var(--radius-sm);
+  background: none;
+  border: none;
+  text-align: left;
+  color: var(--text-primary);
+  font-size: 14px;
+}
+
+.picker__item:hover:not(:disabled) {
+  background: var(--surface-hover);
+}
+
+.picker__item:disabled {
+  opacity: 0.45;
+  cursor: default;
+}
+
+.picker__thumb {
+  flex: none;
+  width: 44px;
+  height: 44px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.picker__thumb img {
+  max-width: 100%;
+  max-height: 100%;
+  object-fit: contain;
+}
+
+.picker__name {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+}
+
+.picker__brand {
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 0.05em;
+  text-transform: uppercase;
+  color: var(--text-muted);
+}
+
+.picker__price {
+  flex: none;
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--text-secondary);
+}
+
+.picker__none {
+  padding: 20px 10px;
+  color: var(--text-muted);
+  font-size: 14px;
+}
+
+/* ------------------------------------------- Product detail: similar products */
+.pdp__similar {
+  margin-top: 48px;
+}
+
+.pdp__similar-grid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 24px;
+  margin-top: 18px;
+}
+
+@media (max-width: 860px) {
+  .pdp__similar-grid {
+    grid-template-columns: 1fr;
+  }
 }

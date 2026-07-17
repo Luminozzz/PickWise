@@ -3,6 +3,8 @@ import LandingPage from './pages/LandingPage.jsx'
 import QuestionnairePage from './pages/QuestionnairePage.jsx'
 import RecommendationsPage from './pages/RecommendationsPage.jsx'
 import ProfilePage from './pages/ProfilePage.jsx'
+import ProductPage from './pages/ProductPage.jsx'
+import ComparePage from './pages/ComparePage.jsx'
 import { createProfile, getProfile, updateProfile } from './api.js'
 
 const PATHS = {
@@ -16,7 +18,31 @@ const viewForPath = (path) => {
   if (path === '/questionnaire') return 'questionnaire'
   if (path === '/recommendations') return 'recommendations'
   if (path === '/profile') return 'profile'
+  if (path.startsWith('/product/')) return 'product'
+  if (path === '/compare' || path.startsWith('/compare/')) return 'compare'
   return 'landing'
+}
+
+function productIdFromPath(path) {
+  const match = (path || '').match(/^\/product\/(\d+)/)
+  return match ? Number(match[1]) : null
+}
+
+// The compared mouse ids live in the URL (/compare/1-2-3), left to right. Bad or
+// repeated ids are dropped rather than rejected, so a hand-typed link still
+// renders. No cap here: how many columns fit is the view's call, not the URL's.
+function compareIdsFromPath(path) {
+  // Digits joined by single dashes, nothing else: a looser pattern lets
+  // /compare/-1 through, where the empty leading segment becomes 0 and the "1"
+  // silently renders mouse #1.
+  const match = (path || '').match(/^\/compare\/(\d+(?:-\d+)*)\/?$/)
+  if (!match) return []
+  const ids = []
+  for (const part of match[1].split('-')) {
+    const n = Number(part)
+    if (Number.isInteger(n) && n > 0 && !ids.includes(n)) ids.push(n)
+  }
+  return ids
 }
 
 const PROFILE_KEY = 'pickwise_profile_id'
@@ -42,6 +68,8 @@ export default function App() {
   const [view, setView] = useState(viewForPath(window.location.pathname))
   const [answers, setAnswers] = useState(loadAnswers)
   const [profileId, setProfileId] = useState(loadProfileId)
+  const [productId, setProductId] = useState(() => productIdFromPath(window.location.pathname))
+  const [compareIds, setCompareIds] = useState(() => compareIdsFromPath(window.location.pathname))
   const [hydrationError, setHydrationError] = useState(null)
 
   // Keep the in-memory answers and their sessionStorage copy in sync.
@@ -93,7 +121,12 @@ export default function App() {
 
   // Keep the view in sync with the browser back/forward buttons.
   useEffect(() => {
-    const onPop = () => setView(viewForPath(window.location.pathname))
+    const onPop = () => {
+      const path = window.location.pathname
+      setView(viewForPath(path))
+      setProductId(productIdFromPath(path))
+      setCompareIds(compareIdsFromPath(path))
+    }
     window.addEventListener('popstate', onPop)
     return () => window.removeEventListener('popstate', onPop)
   }, [])
@@ -124,6 +157,38 @@ export default function App() {
   }, [])
 
   const navigate = (next, payload) => {
+    // Product detail: the payload is the mouse id, not answers.
+    if (next === 'product') {
+      setProductId(payload)
+      const productPath = `/product/${payload}`
+      if (window.location.pathname !== productPath) {
+        window.history.pushState({}, '', productPath)
+      }
+      setView('product')
+      window.scrollTo(0, 0)
+      return
+    }
+
+    // Compare: the payload is a list of mouse ids, not answers. This must return
+    // before the block below, which would otherwise adopt the array as the
+    // user's answers and PUT it to their saved profile (silently — saveProfile
+    // swallows its rejection).
+    if (next === 'compare') {
+      const ids = []
+      for (const value of Array.isArray(payload) ? payload : [payload]) {
+        const n = Number(value)
+        if (Number.isInteger(n) && n > 0 && !ids.includes(n)) ids.push(n)
+      }
+      setCompareIds(ids)
+      const comparePath = ids.length ? `/compare/${ids.join('-')}` : '/compare'
+      if (window.location.pathname !== comparePath) {
+        window.history.pushState({}, '', comparePath)
+      }
+      setView('compare')
+      window.scrollTo(0, 0)
+      return
+    }
+
     let clearedProfile = false
     if (payload !== undefined) {
       applyAnswers(payload)
@@ -194,6 +259,15 @@ export default function App() {
   if (view === 'profile') {
     if (!answers) return hydrationFallback()
     return <ProfilePage answers={answers} onNavigate={navigate} onSaveProfile={handleSaveProfile} />
+  }
+  if (view === 'product') {
+    return <ProductPage productId={productId} answers={answers} onNavigate={navigate} />
+  }
+  if (view === 'compare') {
+    // Row order is this page's whole point, so wait for a saved profile rather
+    // than flashing default-ordered rows and reshuffling once it hydrates.
+    if (!answers && profileId) return hydrationFallback()
+    return <ComparePage productIds={compareIds} answers={answers} onNavigate={navigate} />
   }
   return <LandingPage onNavigate={navigate} answers={answers} />
 }

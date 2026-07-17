@@ -122,6 +122,15 @@ export default function Recommendations({ answers, onNavigate }) {
             </button>
           </div>
         </div>
+
+        <div className="recs__actions recs__actions--top">
+          <button className="btn-primary" type="button" onClick={() => onNavigate && onNavigate('profile')}>
+            Edit preferences
+          </button>
+          <button className="quiz__restart" type="button" onClick={retake}>
+            Retake quiz
+          </button>
+        </div>
       </header>
 
       {view === 'card' ? (
@@ -142,6 +151,7 @@ export default function Recommendations({ answers, onNavigate }) {
                 rank={i + 1}
                 isBest={isBest}
                 criteria={r.criteria}
+                onNavigate={onNavigate}
               />
             )
           })}
@@ -153,7 +163,23 @@ export default function Recommendations({ answers, onNavigate }) {
             const matched = item.passed_rules?.length || 0
             const isBest = matched === topMatched && matched > 0
             return (
-              <li className="rec" key={item.id}>
+              <li
+                className={'rec' + (onNavigate ? ' rec--clickable' : '')}
+                key={item.id}
+                onClick={onNavigate ? () => onNavigate('product', item.id) : undefined}
+                role={onNavigate ? 'button' : undefined}
+                tabIndex={onNavigate ? 0 : undefined}
+                onKeyDown={
+                  onNavigate
+                    ? (e) => {
+                        if (e.key === 'Enter' || e.key === ' ') {
+                          e.preventDefault()
+                          onNavigate('product', item.id)
+                        }
+                      }
+                    : undefined
+                }
+              >
                 <span className="rec__rank">{i + 1}</span>
                 <div className="rec__img">
                   {item.img_link ? (
@@ -186,14 +212,8 @@ export default function Recommendations({ answers, onNavigate }) {
       )}
 
       <div className="recs__actions">
-        <button className="btn-primary" type="button" onClick={() => onNavigate && onNavigate('profile')}>
-          Edit preferences
-        </button>
         <button className="btn-primary" type="button" onClick={() => onNavigate && onNavigate('landing')}>
           Browse all mice <ArrowRight size={14} />
-        </button>
-        <button className="quiz__restart" type="button" onClick={retake}>
-          Retake quiz
         </button>
       </div>
     </main>

@@ -53,8 +53,6 @@ def seed_all():
                 number_of_buttons = feature['number_of_buttons'],
                 min_battery_life = battery_life[0],
                 max_battery_life = battery_life[1],
-                min_polling_rate = polling_rate[0],
-                max_polling_rate = polling_rate[1],
                 other_features = feature['other_features'],
             )
 
@@ -83,13 +81,18 @@ def seed_all():
                 connectivity.wired = True
 
             gaming = session.query(Gaming_Mouse).filter_by(mouse_id=mouse.id).first()
-            if feature['tracking_speed'] is not None or feature['max_acceleration'] is not None:
+            # Polling rate lives here now, so a mouse with a polling rate but no
+            # tracking/acceleration still needs a gaming_specs row.
+            if (feature['tracking_speed'] is not None
+                    or feature['max_acceleration'] is not None
+                    or polling_rate[1] is not None):
                 if gaming is None:
                     gaming = Gaming_Mouse(mouse_id=mouse.id)
                     session.add(gaming)
                 gaming.rgb = feature['rgb']
                 gaming.acceleration = feature['max_acceleration']
                 gaming.tracking_speed = feature['tracking_speed']
+                gaming.max_polling_rate = polling_rate[1]
 
     session.commit()
 

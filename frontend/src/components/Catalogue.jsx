@@ -29,7 +29,7 @@ function loadView() {
 
 const priceOf = (it) => (it.price && it.price.amount != null ? Number(it.price.amount) : null)
 
-function CatalogueRow({ item, answers }) {
+function CatalogueRow({ item, answers, onNavigate }) {
   const brand = item.brand_name || ''
   const model =
     brand && item.product_name?.startsWith(brand)
@@ -38,7 +38,22 @@ function CatalogueRow({ item, answers }) {
   const tags = buildTags(item, answers).slice(0, 3)
   const price = formatPrice(item.price)
   return (
-    <li className="rec">
+    <li
+      className={'rec' + (onNavigate ? ' rec--clickable' : '')}
+      onClick={onNavigate ? () => onNavigate('product', item.id) : undefined}
+      role={onNavigate ? 'button' : undefined}
+      tabIndex={onNavigate ? 0 : undefined}
+      onKeyDown={
+        onNavigate
+          ? (e) => {
+              if (e.key === 'Enter' || e.key === ' ') {
+                e.preventDefault()
+                onNavigate('product', item.id)
+              }
+            }
+          : undefined
+      }
+    >
       <div className="rec__img">
         {item.img_link ? (
           <img src={item.img_link} alt={item.product_name} loading="lazy" />
@@ -75,7 +90,7 @@ function CatalogueRow({ item, answers }) {
   )
 }
 
-export default function Catalogue({ items, loading, error, answers }) {
+export default function Catalogue({ items, loading, error, answers, onNavigate }) {
   const [view, setView] = useState(loadView)
   const [sort, setSort] = useState('featured')
   const [brands, setBrands] = useState([])
@@ -233,13 +248,13 @@ export default function Catalogue({ items, loading, error, answers }) {
       ) : view === 'card' ? (
         <div className="catalogue__grid">
           {displayed.map((it) => (
-            <ProductCard key={it.id} item={it} answers={answers} />
+            <ProductCard key={it.id} item={it} answers={answers} onNavigate={onNavigate} />
           ))}
         </div>
       ) : (
         <ol className="catalogue__list">
           {displayed.map((it) => (
-            <CatalogueRow key={it.id} item={it} answers={answers} />
+            <CatalogueRow key={it.id} item={it} answers={answers} onNavigate={onNavigate} />
           ))}
         </ol>
       )}
