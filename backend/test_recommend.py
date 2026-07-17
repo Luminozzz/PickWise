@@ -33,14 +33,14 @@ from algorithm.recommend import recommend
 def _conn(bluetooth=False, dongle=False, wired=True):
     return SimpleNamespace(bluetooth=bluetooth, dongle=dongle, wired=wired)
 
-def _gaming(rgb=False, tracking_speed=400):
-    return SimpleNamespace(rgb=rgb, tracking_speed=tracking_speed)
+def _gaming(rgb=False, tracking_speed=400, max_polling_rate=1000):
+    return SimpleNamespace(rgb=rgb, tracking_speed=tracking_speed, max_polling_rate=max_polling_rate)
 
 def _mouse(id, product_name, brand_name, *,
            length=120, weight=90, left_fit=False,
            ergonomy=Ergonomy.SYMMETRICAL, max_DPI=8000,
            number_of_buttons=3, min_battery_life=50,
-           max_polling_rate=1000, connectivity=None, gaming_specs=None):
+           connectivity=None, gaming_specs=None):
     return SimpleNamespace(
         id=id,
         product_name=product_name,
@@ -52,7 +52,6 @@ def _mouse(id, product_name, brand_name, *,
         max_DPI=max_DPI,
         number_of_buttons=number_of_buttons,
         min_battery_life=min_battery_life,
-        max_polling_rate=max_polling_rate,
         connectivity=connectivity or _conn(),
         gaming_specs=gaming_specs,
     )

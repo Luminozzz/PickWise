@@ -11,6 +11,7 @@ async def landing_page():
     with open("app/templates/page.html") as f:
         return f.read()
 
+
 # One row per mouse, enriched with connectivity, gaming specs, the cheapest
 # current price, the best-reviewed listing, and any colour variants.
 _ITEMS_SQL = text(
@@ -20,9 +21,9 @@ _ITEMS_SQL = text(
         m.left_fit,
         m.ergonomy, m."max_DPI", m.length, m.width, m.height, m.weight,
         m.number_of_buttons, m.min_battery_life, m.max_battery_life,
-        m.min_polling_rate, m.max_polling_rate, m.other_features,
+        m.other_features,
         c.bluetooth, c.dongle, c.wired,
-        g.rgb, g.tracking_speed, g.acceleration,
+        g.rgb, g.tracking_speed, g.acceleration, g.max_polling_rate,
         p.price AS price_amount, p.currency AS price_currency, p.date AS price_date,
         r.num_of_stars AS rating_stars, r.num_of_reviews AS rating_reviews,
         sk.colours
@@ -30,13 +31,18 @@ _ITEMS_SQL = text(
     LEFT JOIN mouse_connectivity c ON c.mouse_id = m.id
     LEFT JOIN gaming_mouse_specs g ON g.mouse_id = m.id
     LEFT JOIN LATERAL (
-        SELECT price, currency, date FROM price_history
-        WHERE mouse_id = m.id ORDER BY date DESC, price ASC LIMIT 1
+        SELECT ph.price, ph.currency, ph.date
+        FROM price_history ph
+        JOIN mouse_skins sk_p ON sk_p.id = ph.mouse_id
+        WHERE sk_p.mouse_id = m.id
+        ORDER BY ph.date DESC, ph.price ASC LIMIT 1
     ) p ON true
     LEFT JOIN LATERAL (
-        SELECT num_of_stars, num_of_reviews FROM price_history
-        WHERE mouse_id = m.id AND num_of_stars IS NOT NULL
-        ORDER BY num_of_reviews DESC NULLS LAST LIMIT 1
+        SELECT ph.num_of_stars, ph.num_of_reviews
+        FROM price_history ph
+        JOIN mouse_skins sk_r ON sk_r.id = ph.mouse_id
+        WHERE sk_r.mouse_id = m.id AND ph.num_of_stars IS NOT NULL
+        ORDER BY ph.num_of_reviews DESC NULLS LAST LIMIT 1
     ) r ON true
     LEFT JOIN LATERAL (
         SELECT array_agg(DISTINCT colour) AS colours FROM mouse_skins
@@ -70,6 +76,7 @@ def _shape(row):
             "rgb": r["rgb"],
             "tracking_speed": r["tracking_speed"],
             "acceleration": r["acceleration"],
+            "max_polling_rate": r["max_polling_rate"],
         }
 
     price = None
@@ -101,8 +108,6 @@ def _shape(row):
         "number_of_buttons": r["number_of_buttons"],
         "min_battery_life": r["min_battery_life"],
         "max_battery_life": r["max_battery_life"],
-        "min_polling_rate": r["min_polling_rate"],
-        "max_polling_rate": r["max_polling_rate"],
         "other_features": r["other_features"],
         "connectivity": connectivity,
         "gaming": gaming,

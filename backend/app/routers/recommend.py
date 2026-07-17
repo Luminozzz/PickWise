@@ -94,13 +94,17 @@ def recommend_route(answers: dict = Body(...)):
             .all()
         )
 
-        # one query for every mouse's latest (cheapest) price — the budget rule
-        # reads this map instead of hitting the DB per candidate.
+        # one query for every mouse's latest (cheapest) price across all of
+        # its colour variants — the budget rule reads this map instead of
+        # hitting the DB per candidate. price_history.mouse_id points at a
+        # specific Mouse_Skins row, so resolve back to the parent mouse.
         prices = dict(
             session.execute(text(
                 """
-                SELECT DISTINCT ON (mouse_id) mouse_id, price
-                FROM price_history ORDER BY mouse_id, date DESC, price ASC
+                SELECT DISTINCT ON (sk.mouse_id) sk.mouse_id, ph.price
+                FROM price_history ph
+                JOIN mouse_skins sk ON sk.id = ph.mouse_id
+                ORDER BY sk.mouse_id, ph.date DESC, ph.price ASC
                 """
             )).all()
         )
