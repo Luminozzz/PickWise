@@ -1,14 +1,17 @@
 from .classes import Rule, RuleType, Hand_Size, Preferability, Connectivity, Game_Type, Usage, User_Type
 from . import config
-from database.models import Ergonomy, Price_History, SessionLocal
+from database.models import Ergonomy, Price_History, Mouse_Skins, SessionLocal
 
 
 def _latest_price(mouse):
-    """Most recent Price_History row for a mouse, or None. Plain SQLAlchemy."""
+    """Most recent Price_History row across any of a mouse's skins, or None.
+    Price_History.mouse_id points at a specific Mouse_Skins row, not the
+    mouse directly. Plain SQLAlchemy."""
     with SessionLocal() as session:
         return (
             session.query(Price_History)
-            .filter_by(mouse_id=mouse.id)
+            .join(Mouse_Skins, Price_History.mouse_id == Mouse_Skins.id)
+            .filter(Mouse_Skins.mouse_id == mouse.id)
             .order_by(Price_History.date.desc())
             .first()
         )
@@ -359,7 +362,7 @@ def _type_of_game_points(facts: dict, mouse) -> float:
     if gaming_mouse_specs is not None:
         tracking_speed = gaming_mouse_specs.tracking_speed
     dpi = mouse.max_DPI
-    polling_rate = mouse.max_polling_rate
+    polling_rate = gaming_mouse_specs.max_polling_rate if gaming_mouse_specs is not None else None
     weight = mouse.weight
 
     if type_of_game == Game_Type.MMORPG or type_of_game == Game_Type.NOT_MENTIONED:
@@ -373,11 +376,11 @@ def _type_of_game_points(facts: dict, mouse) -> float:
         return (required_dpi + required_mouse_weight) * config.MAJOR_FACTOR
     elif type_of_game == Game_Type.RTS:
         required_dpi = dpi >= config.REQUIRED_DPI_RTS
-        required_polling_rate = polling_rate >= config.REQUIRED_POLLING_RATE_RTS
+        required_polling_rate = (polling_rate or 0) >= config.REQUIRED_POLLING_RATE_RTS
         return (required_dpi + required_polling_rate) * config.MODERATE_FACTOR
     elif type_of_game == Game_Type.MOBA:
         required_dpi = dpi >= config.REQUIRED_DPI_MOBA
-        required_polling_rate = polling_rate >= config.REQUIRED_POLLING_RATE_MOBA
+        required_polling_rate = (polling_rate or 0) >= config.REQUIRED_POLLING_RATE_MOBA
         return (required_dpi + required_polling_rate) * config.NORMAL_FACTOR
     return 0.0
 
@@ -386,7 +389,7 @@ def _type_of_game_explanation(facts: dict, mouse) -> str:
     buttons = mouse.number_of_buttons
     gaming_specs = mouse.gaming_specs
     dpi = mouse.max_DPI
-    polling_rate = mouse.max_polling_rate
+    polling_rate = gaming_specs.max_polling_rate if gaming_specs is not None else None
     weight = mouse.weight
 
     if type_of_game == Game_Type.MMORPG:
@@ -419,7 +422,9 @@ def _type_of_game_explanation(facts: dict, mouse) -> str:
             positives.append(f"DPI of {dpi} suits rapid unit selection")
         else:
             issues.append(f"DPI of {dpi} is below the {config.REQUIRED_DPI_RTS} recommended for RTS")
-        if polling_rate >= config.REQUIRED_POLLING_RATE_RTS:
+        if polling_rate is None:
+            issues.append("polling rate isn't listed for this mouse")
+        elif polling_rate >= config.REQUIRED_POLLING_RATE_RTS:
             positives.append(f"polling rate of {polling_rate}Hz gives responsive cursor tracking")
         else:
             issues.append(f"polling rate of {polling_rate}Hz is below the {config.REQUIRED_POLLING_RATE_RTS}Hz needed for RTS")
@@ -433,7 +438,9 @@ def _type_of_game_explanation(facts: dict, mouse) -> str:
             positives.append(f"DPI of {dpi} supports accurate skill shots")
         else:
             issues.append(f"DPI of {dpi} is below the {config.REQUIRED_DPI_MOBA} recommended for MOBA")
-        if polling_rate >= config.REQUIRED_POLLING_RATE_MOBA:
+        if polling_rate is None:
+            issues.append("polling rate isn't listed for this mouse")
+        elif polling_rate >= config.REQUIRED_POLLING_RATE_MOBA:
             positives.append(f"polling rate of {polling_rate}Hz keeps inputs responsive")
         else:
             issues.append(f"polling rate of {polling_rate}Hz is below the {config.REQUIRED_POLLING_RATE_MOBA}Hz needed for MOBA")

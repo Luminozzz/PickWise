@@ -52,7 +52,7 @@ class Mouse(Base):
     link = Column(String)
     img_link = Column(String)  # main image (transparent product render preferred)
     alt_img_link = Column(String)  # secondary / marketing image (e.g. lifestyle shot)
-    left_fit = Column(Boolean, default=False)
+    left_fit = Column(Boolean, nullable=False, default=False)
     ergonomy = Column(SAEnum(Ergonomy))
     max_DPI = Column(Integer)
     length = Column(Float)  # mm
@@ -81,19 +81,19 @@ class Gaming_Mouse(Base):
     __tablename__ = "gaming_mouse_specs"
 
     mouse_id = Column(Integer, ForeignKey("mouse_model.id"), primary_key=True)
-    rgb = Column(Boolean, default=False)
+    rgb = Column(Boolean, nullable=False, default=False)
     acceleration = Column(Integer)  # Max linear acceleration in G before tracking fails
     tracking_speed = Column(Integer)  # Tracking speed in inches per second (IPS)
-    max_polling_rate = Column(Integer)  # Hz
+    max_polling_rate = Column(Integer, nullable=True)  # Hz
 
 
 class Mouse_Connectivity(Base):
     __tablename__ = "mouse_connectivity"
 
     mouse_id = Column(Integer, ForeignKey("mouse_model.id"), primary_key=True)
-    bluetooth = Column(Boolean, default=False)
-    dongle = Column(Boolean, default=False)
-    wired = Column(Boolean, default=False)
+    bluetooth = Column(Boolean, nullable=False, default=False)
+    dongle = Column(Boolean, nullable=False, default=False)
+    wired = Column(Boolean, nullable=False, default=False)
 
 
 class Mouse_Skins(Base):
@@ -103,33 +103,43 @@ class Mouse_Skins(Base):
     mouse_id = Column(Integer, ForeignKey("mouse_model.id"), nullable=False)
     product_name = Column(String, nullable=False)
     colour = Column(String, nullable=False)
-    img_link = Column(String, nullable=False)
+    img_link = Column(JSON, nullable=False)  # list of image URLs for this colour
+    # Store's buy link for this specific colour variant. Always a real URL -
+    # when the mouse has no distinct per-colour link to give (e.g. it only
+    # ships in one colour), this is set to that mouse's own Mouse.link
+    # rather than a placeholder, so it equals Mouse.link in that case. No
+    # column default: every write path must set this explicitly, since the
+    # right value depends on the associated Mouse row.
+    buy_link = Column(String, nullable=False)
+
+    price_history = relationship("Price_History", backref="skin", lazy=True)
 
 
 class Price_History(Base):
     __tablename__ = "price_history"
-    # One price per (mouse, store, colour, day). NULLS NOT DISTINCT so rows with
-    # a NULL colour still can't duplicate (Postgres 15+).
+    # One price per (skin, store, day). mouse_id points at a specific
+    # Mouse_Skins row (never mouse_model directly) - colour is implied via
+    # that skin, so it's not duplicated here. NULLS NOT DISTINCT so rows with
+    # a NULL sort_by still can't duplicate (Postgres 15+).
     __table_args__ = (
         UniqueConstraint(
             "mouse_id",
             "store_name",
-            "colour",
             "date",
-            name="uq_price_history_mouse_store_colour_date",
+            "sort_by",
+            name="uq_price_history_mouse_store_date",
             postgresql_nulls_not_distinct=True,
         ),
     )
 
     id = Column(Integer, primary_key=True, autoincrement=True)
-    mouse_id = Column(Integer, ForeignKey("mouse_model.id"), nullable=False)
+    mouse_id = Column(Integer, ForeignKey("mouse_skins.id"), nullable=False)
     product_name = Column(String, nullable=False)
     date = Column(Date, nullable=False)
     currency = Column(String, nullable=False)
     price = Column(Float, nullable=False)
     num_of_stars = Column(Float, nullable=True)
     num_of_reviews = Column(Integer, nullable=True)
-    colour = Column(String, nullable=True)
     store_link = Column(String, nullable=False)
     store_name = Column(String, nullable=False)
     sort_by = Column(SAEnum(Sort_By))
