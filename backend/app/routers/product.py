@@ -143,22 +143,26 @@ def _similar_products(session, base, base_price, limit=3):
     )
 
     # Cheapest price on the most recent date, per mouse — mirrors the catalogue.
+    # Price_History.mouse_id points at a specific Mouse_Skins row, not the
+    # mouse directly, so resolve back to the parent mouse via the join.
     price_by_mouse = {}
-    for row in (
-        session.query(Price_History)
+    for mouse_id, row in (
+        session.query(Mouse_Skins.mouse_id, Price_History)
+        .join(Price_History, Price_History.mouse_id == Mouse_Skins.id)
         .order_by(Price_History.date.desc(), Price_History.price.asc())
         .all()
     ):
-        price_by_mouse.setdefault(row.mouse_id, row)
+        price_by_mouse.setdefault(mouse_id, row)
 
     rating_by_mouse = {}
-    for row in (
-        session.query(Price_History)
+    for mouse_id, row in (
+        session.query(Mouse_Skins.mouse_id, Price_History)
+        .join(Price_History, Price_History.mouse_id == Mouse_Skins.id)
         .filter(Price_History.num_of_stars.isnot(None))
         .order_by(Price_History.num_of_reviews.desc())
         .all()
     ):
-        rating_by_mouse.setdefault(row.mouse_id, row)
+        rating_by_mouse.setdefault(mouse_id, row)
 
     scored = []
     for cand in candidates:
@@ -249,15 +253,19 @@ def product_route(mouse_id: int, answers: dict = Body(default=None)):
             .all()
         ]
 
+        # Price_History.mouse_id points at a specific Mouse_Skins row, not the
+        # mouse directly - resolve back through the skin.
         price_row = (
             session.query(Price_History)
-            .filter_by(mouse_id=mouse_id)
+            .join(Mouse_Skins, Price_History.mouse_id == Mouse_Skins.id)
+            .filter(Mouse_Skins.mouse_id == mouse_id)
             .order_by(Price_History.date.desc(), Price_History.price.asc())
             .first()
         )
         rating_row = (
             session.query(Price_History)
-            .filter(Price_History.mouse_id == mouse_id, Price_History.num_of_stars.isnot(None))
+            .join(Mouse_Skins, Price_History.mouse_id == Mouse_Skins.id)
+            .filter(Mouse_Skins.mouse_id == mouse_id, Price_History.num_of_stars.isnot(None))
             .order_by(Price_History.num_of_reviews.desc())
             .first()
         )
