@@ -3,20 +3,20 @@ from playwright.sync_api import sync_playwright, TimeoutError as PlaywrightTimeo
 from bs4 import BeautifulSoup
 import re
 from urllib.parse import urljoin
-import random
 import time
 from scrapers import config
 from scrapers.image_utils import logitech_hi_res
 from playwright_stealth import Stealth
+from scrapers import human_behaviour
 from scrapers.human_behaviour import scroll_to_bottom
 
 class logitech_scraper(scrapy.Spider):
     name = "logitech_mouse_spider"
     standard_url = "https://www.logitech.com/en-sg/shop/c/mice"
     urls = {
-        #'left_ergo_url': 'https://www.logitech.com/en-sg/shop/c/mice?refine=c_filterhandpreference%3Dleft',
-        #'right_ergo_url': 'https://www.logitech.com/en-sg/shop/c/mice?refine=c_filterhandpreference%3Dright',
-        #'ambidextrous_url': 'https://www.logitech.com/en-sg/shop/c/mice?refine=c_filterhandpreference%3Dambidextrous',
+        'left_ergo_url': 'https://www.logitech.com/en-sg/shop/c/mice?refine=c_filterhandpreference%3Dleft',
+        'right_ergo_url': 'https://www.logitech.com/en-sg/shop/c/mice?refine=c_filterhandpreference%3Dright',
+        'ambidextrous_url': 'https://www.logitech.com/en-sg/shop/c/mice?refine=c_filterhandpreference%3Dambidextrous',
         'gaming_mouse_url': 'https://www.logitech.com/en-sg/shop/c/mice?refine=c_filterseries%3Dg5-series%7Cg%7Cpro'
     }
 
@@ -77,7 +77,11 @@ class logitech_scraper(scrapy.Spider):
     def is_blocked(self, page):
         try:
             title = page.title().lower()
-            body_start = page.content()[:2000].lower()
+            # Rendered visible text, not raw HTML source - the source can
+            # contain a block marker incidentally (e.g. a reCAPTCHA <script>
+            # tag's URL literally contains "captcha" on every normal page
+            # load), which would otherwise read as a false block.
+            body_start = page.inner_text("body")[:2000].lower()
         except Exception:
             return False
         return any(m in title or m in body_start for m in config.BLOCK_PAGE_MARKERS)
@@ -87,7 +91,48 @@ class logitech_scraper(scrapy.Spider):
         t = t.replace('\xa0', ' ')
         t = re.sub(r'\s*\?\s*', ' ', t)
         return ' '.join(t.split())
-    
+
+    # Colour variants + the front-page image set for each one. Clicking each
+    # swatch (scoped to the main buy-module, since unrelated "recommended
+    # products" carousels further down the page carry their own identically
+    # labelled colour-swatch widgets) swaps the gallery to that colour's own
+    # renders — this sidesteps swatch-label/filename mismatches (e.g. a
+    # "Magenta" swatch whose image files are actually named "-pink-").
+    def extract_colours(self, page, max_images=5):
+        swatches = page.locator(
+            'section.buy-module div[role="radiogroup"][aria-label="Color swatches"] button.swatch'
+        )
+        colours = []
+        for i in range(swatches.count()):
+            swatch = swatches.nth(i)
+            colour = swatch.get_attribute('aria-label')
+            if not colour:
+                continue
+            try:
+                swatch.click(force=True)
+                page.wait_for_timeout(1500)
+            except Exception:
+                continue
+
+            soup = BeautifulSoup(page.content(), 'html.parser')
+            buy_module = soup.select_one('section.buy-module')
+            container = buy_module.select_one('div.gallery-col-inner') if buy_module else None
+            if container is None:
+                continue
+
+            images = []
+            seen = set()
+            for img in container.find_all('img', src=re.compile(r'resource\.logitech\.com.*-gallery-\d+')):
+                src = logitech_hi_res(img['src'])
+                if src not in seen:
+                    seen.add(src)
+                    images.append(src)
+                if len(images) >= max_images:
+                    break
+            if images:
+                colours.append({colour: images})
+        return colours
+
     def scraper_logitech_mouse_details(self, mouse_links: dict):
         data = []
         failed = []
@@ -115,6 +160,7 @@ class logitech_scraper(scrapy.Spider):
                         
                         print(f"-> {name} (attempt {attempt}): {val['url']}")
                         page.goto(val['url'], wait_until='domcontentloaded', timeout=60000)
+                        page.wait_for_timeout(timeout = 5000)
                         button = page.locator('[data-analytics-title="specs-open-close"]')
                         print(f"matches: {button.count()}")
                         print(f"visible: {button.first.is_visible() if button.count() else 'N/A'}")
@@ -149,7 +195,13 @@ class logitech_scraper(scrapy.Spider):
                             "value": val['hand_fit'],
                         }
 
-                        data.extend([name_desc_dict, link_dict, image_dict, hand_fit_dict])
+                        colour_dict = {
+                            "product_name": name,
+                            "feature": 'colours',
+                            "value": self.extract_colours(page),
+                        }
+
+                        data.extend([name_desc_dict, link_dict, image_dict, hand_fit_dict, colour_dict])
                         container = soup.select_one('div.content.svelte-l0ls1x')
                         
                         kv_re = re.compile(r'^\s*(.{1,60}?)\s*:\s*(.+)$', re.DOTALL)
@@ -220,10 +272,7 @@ class logitech_scraper(scrapy.Spider):
 
                     except Exception as e:
                         print(f"   attempt {attempt} failed: {type(e).__name__}: {e}")
-                delay = random.uniform(30, 45)
-                if random.random() < 0.1:
-                    delay = random.uniform(90, 150)
-                time.sleep(delay)
+                human_behaviour.polite_delay()
                 if not ok:
                     failed.append(name)
             page.close()
@@ -239,6 +288,7 @@ class logitech_scraper(scrapy.Spider):
         format = {
             'link': None,
             'img_link': None,
+            'colours': [],
             'ergonomy': "none",
             'left_fit': False,
             'battery_life': (0,0),
@@ -268,7 +318,7 @@ class logitech_scraper(scrapy.Spider):
                 data[product_name] = format.copy()
                 data[product_name]['brand_name'] = product_name.split(None, 1)[0]
 
-            if feature in ["link", "img_link"]:
+            if feature in ["link", "img_link", "colours"]:
                 data[product_name][feature] = value
                 continue
 
@@ -295,7 +345,11 @@ class logitech_scraper(scrapy.Spider):
                 elif isinstance(val, str):
                     if val != "none":
                         data[product_name][key] = val
-                elif val is not None and existing is not None and val > existing and type(val) == type(existing):
+                # tracking_speed/max_acceleration default to None (not 0) so
+                # seed.py can tell "never reported" apart from a genuine
+                # zero - existing being None must still accept the first
+                # real value seen, not just a strictly-greater one.
+                elif val is not None and (existing is None or (type(val) == type(existing) and val > existing)):
                     data[product_name][key] = val
         return {name.removesuffix("gaming"): attrs for name, attrs in data.items()}
     
@@ -420,16 +474,14 @@ class logitech_scraper(scrapy.Spider):
         return None
 
     def battery_life(self, value: str) -> tuple[int, int]:
-        if "month" in value:
-            match_month = re.search(r'(\d+)', value, re.IGNORECASE)
-            if match_month:
-                months = int(match_month.group(1)) * 30 * 24
-                return (months, months)
-        if "day" in value:
-            if match_days:
-                match_days = re.search(r'(\d+)', value, re.IGNORECASE)
-                days = int(match_days.group(1)) * 24
-                return (days, days)
+        match_month = re.search(r'(\d+)\s*months?', value, re.IGNORECASE)
+        if match_month:
+            months = int(match_month.group(1)) * 30 * 24
+            return (months, months)
+        match_days = re.search(r'(\d+)\s*days?', value, re.IGNORECASE)
+        if match_days:
+            days = int(match_days.group(1)) * 24
+            return (days, days)
         match_batt = re.findall(r'(\d+)\s*\+?\s*(?:hours?|hrs?|h)\b', value, re.IGNORECASE)
         if match_batt:
             hours = [int(match) for match in match_batt]
@@ -449,11 +501,11 @@ class logitech_scraper(scrapy.Spider):
         return None
     
     def tracking_speed(self, value: str) -> int:
-        match = re.search(r'>(\d+)\s*IPS', value)
+        match = re.search(r'>(\d+)\s*ips', value, re.IGNORECASE)
         return int(match.group(1)) if match else None
-    
+
     def max_acceleration(self, value: str) -> int:
-        match = re.search(r'>(\d+)G', value)
+        match = re.search(r'>(\d+)g', value, re.IGNORECASE)
         return int(match.group(1)) if match else None
     
     def weight(self, value: str) -> float:

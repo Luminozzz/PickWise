@@ -67,7 +67,11 @@ class rog_scraper(scrapy.Spider):
     def is_blocked(self, page):
         try:
             title = page.title().lower()
-            body_start = page.content()[:2000].lower()
+            # Rendered visible text, not raw HTML source - the source can
+            # contain a block marker incidentally (e.g. a reCAPTCHA <script>
+            # tag's URL literally contains "captcha" on every normal page
+            # load), which would otherwise read as a false block.
+            body_start = page.inner_text("body")[:2000].lower()
         except Exception:
             return False
         return any(m in title or m in body_start for m in config.BLOCK_PAGE_MARKERS)

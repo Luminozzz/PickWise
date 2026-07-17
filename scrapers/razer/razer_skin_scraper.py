@@ -1,119 +1,128 @@
 import scrapy
+import time
 from playwright.sync_api import sync_playwright, TimeoutError as PlaywrightTimeoutError
 from bs4 import BeautifulSoup
 import re
-from urllib.parse import urljoin
-import random
-import time
 from scrapers import config
 from scrapers.image_utils import razer_full_res
 from playwright_stealth import Stealth
 import unicodedata
 
+
 class razer_skin_scraper(scrapy.Spider):
     name = "razer_skin_scraper"
-    store_url = "https://www.razer.com/sg-en/store/gaming-mice"
 
-    # List of dictionary. Each element contains the id, brand_name, product_name, link
-    def scrape_razer_mouse_colours(self, lst_of_mouse):
+    def _current_main_image_src(self, page):
+        soup = BeautifulSoup(page.content(), 'html.parser')
+        img_div = soup.find('div', class_='product-image')
+        img_tag = img_div.find('img', src=re.compile(r'assets3\.razerzone\.com')) if img_div else None
+        return img_tag['src'] if img_tag else None
+
+    # For each mouse's own product page, click through every Color/Design
+    # option and capture that colour's resulting buy link (the page
+    # navigates to a colour-specific SKU URL) and full-res product image.
+    # This catches colours/editions that never show up as their own card on
+    # the general store listing - e.g. collab editions like "Minecraft
+    # Edition" only visible on the plain "Razer Cobra" product page - at the
+    # cost of one click+wait per colour instead of a single page parse.
+    def scrape_mouse_colour_details(self, lst_of_mouse):
         data = []
 
         with Stealth().use_sync(sync_playwright()) as p:
             browser = p.chromium.launch_persistent_context(**config.BROWSER_LAUNCH, **config.BROWSER_CONTEXT)
-            browser.route("**/*",
+            browser.route(
+                "**/*",
                 lambda route: route.abort()
-                if re.search(r"\.(png|jpe?g|gif|webp|svg|avif|woff2?|ttf|mp4)(\?|$)",
+                if re.search(r"\.(gif|avif|woff2?|ttf|mp4)(\?|$)",
                             route.request.url, re.IGNORECASE)
-                else route.continue_()
-                )
+                else route.continue_(),
+            )
             page = browser.new_page()
+
             for mouse in lst_of_mouse:
+                product_name = mouse['product_name']
+                link = mouse['link']
                 try:
-                    page.goto(mouse['link'], wait_until="domcontentloaded", timeout = 60000)
+                    page.goto(link, wait_until='domcontentloaded', timeout=60000)
+                    page.wait_for_timeout(2000)
 
-                    soup = BeautifulSoup(page.content(), 'html.parser')
-                    uls = soup.find('div', class_ = "variant-category-color")
-                    if uls is None:
-                        temp = {
-                            'product_name': mouse['product_name'],
-                            'colour': 'Black',
-                        }
-                        data.append(temp)
+                    # Scoped to the "variant-category-color" selector only,
+                    # so the separate "Model" bundle selector (e.g. "Cobra +
+                    # Gigantus V2 (Medium)") never gets clicked.
+                    colour_buttons = page.locator(
+                        'div.bto-variant-selector.variant-category-color '
+                        'ul.variant-category-list li.variant-category-list-item button'
+                    )
+                    count = colour_buttons.count()
+                    if count == 0:
+                        print(f"[razer_skin_scraper] no colour selector on {product_name}")
                         continue
-                    for li in uls.find_all('li'):
-                        ok = li.find('span', class_ = 'no-discount')
-                        if ok is not None:
-                            if ok.text.strip() != "":
-                                continue
-                        colours = li.find_all('span', class_ = 'bto-category-label-info')
-                        if colours is None:
+
+                    last_img_src = self._current_main_image_src(page)
+
+                    for i in range(count):
+                        btn = colour_buttons.nth(i)
+                        colour_name = btn.get_attribute('aria-label')
+                        if not colour_name:
                             continue
-                        for colour in colours:
-                            colour = colour.text.strip()
-                            temp = {
-                                'product_name': mouse['product_name'],
-                                'colour': colour,
-                            }
-                            data.append(temp)
-                except Exception as e:
-                    print(f"Error processing {mouse['product_name']}: {e}")
-            page.close()
-            browser.close()
-        return data
+                        colour_name = unicodedata.normalize('NFKD', colour_name).strip()
 
-    def scrape_img_link(self, colour_data):
-        data = []
+                        # The already-active swatch (usually the default,
+                        # e.g. Black) needs no click - the page already
+                        # reflects it. Clicking an already-active swatch
+                        # would just re-poll for an image change that will
+                        # never come, and time out for no reason.
+                        already_active = btn.get_attribute('aria-current') == 'page'
+                        if not already_active:
+                            # A real Playwright mouse click gets blocked by
+                            # CSS layering (the button's own containing <ul>,
+                            # and sometimes a cookie-consent overlay). A
+                            # JS-level click() bypasses that and still fires
+                            # Angular's (click) handler the same way.
+                            btn.evaluate('el => el.click()')
 
-        with Stealth().use_sync(sync_playwright()) as p:
-            browser = p.chromium.launch_persistent_context(**config.BROWSER_LAUNCH, **config.BROWSER_CONTEXT)
-            page = browser.new_page()
-            try:
-                page.goto(self.store_url)
-                page.wait_for_selector('div.card-wrapper-main', timeout = 60000)
-                soup = BeautifulSoup(page.content(), 'html.parser')
-                all_the_divs = soup.find_all('div', class_ = 'card-wrapper-main')
-                for mouse in colour_data:
-                    colour = mouse['colour']
-                    product_name = mouse['product_name']
-                    # Find the card whose title matches this product. If none
-                    # matches, skip — never fall back to a stale/last div, which
-                    # would attribute another product's image to this mouse.
-                    spec_div = None
-                    for div in all_the_divs:
-                        if div.find('h3', string = product_name) is not None:
-                            spec_div = div
-                            break
-                    if spec_div is None:
-                        continue
-                    colour_options = spec_div.find('ul', class_ = ['options-colordesign', 'options'])
-                    if colour_options is None:
-                        img_link = spec_div.find('div', class_ = 'thumbnail-holder').find('img')
+                            deadline = time.time() + 8
+                            new_src = last_img_src
+                            while time.time() < deadline:
+                                page.wait_for_timeout(300)
+                                new_src = self._current_main_image_src(page)
+                                if new_src and new_src != last_img_src:
+                                    break
+                            else:
+                                print(f"[razer_skin_scraper] image never changed for "
+                                      f"{product_name} / {colour_name} - keeping it anyway")
+
+                        buy_link = page.url
+                        img_src = self._current_main_image_src(page)
+                        img_link = razer_full_res(img_src) if img_src else None
                         if img_link is None:
                             continue
-                        temp = {
+                        last_img_src = img_src
+
+                        data.append({
                             'product_name': product_name,
-                            'colour': colour,
-                            'img_link': razer_full_res(img_link['src'])
-                        }
-                        data.append(temp)
-                        continue
-                    img_link = colour_options.find(attrs={'data-value': colour})
-                    if img_link is None:
-                        continue
-                    temp = {
-                        'product_name': product_name,
-                        'colour': colour,
-                        'img_link': razer_full_res(img_link['data-thumbnail'])
-                    }
-                    data.append(temp)
-            except Exception as e:
-                print(f"Error processing {mouse['product_name']}: {e}")
+                            'colour': colour_name,
+                            'buy_link': buy_link,
+                            'img_link': img_link,
+                        })
+                except Exception as e:
+                    print(f"[razer_skin_scraper] failed on {product_name}: {type(e).__name__}: {e}")
+
             page.close()
             browser.close()
+        print(data)
         return data
 
-    def run(self,lst_of_mouse):
+    def run(self, lst_of_mouse):
         scraper = razer_skin_scraper()
-        mouse_colours = scraper.scrape_razer_mouse_colours(lst_of_mouse)
-        mouse_links = scraper.scrape_img_link(mouse_colours)
-        return mouse_links
+        return scraper.scrape_mouse_colour_details(lst_of_mouse)
+
+
+if __name__ == "__main__":
+    scraper = razer_skin_scraper()
+    lst_of_mouse = [{
+        'product_name': 'Razer Cobra',
+        'link': 'https://www.razer.com/sg-en/gaming-mice/razer-cobra/buy',
+    }]
+    result = scraper.run(lst_of_mouse)
+    print(result)

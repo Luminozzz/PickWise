@@ -31,9 +31,17 @@ class amazon_new_product_price_scraper(scrapy.Spider):
             page = browser.new_page()
             
             for mouse in human_behaviour.shuffled_subset(lst_of_mouse):
+                # is_default means this mouse only ships in one colour (no
+                # distinct buy link of its own) - leave colour out of the
+                # search text rather than searching on an arbitrary/
+                # unconfirmed colour name.
+                if mouse.get('is_default'):
+                    search_text = mouse['product_name'].strip()
+                else:
+                    search_text = f"{mouse['product_name']} {mouse['colour']}".strip()
                 try:
                     product_pool = []
-                    search_url = self.amazon_store_url + "s?k=" + "+".join(mouse.split(" "))
+                    search_url = self.amazon_store_url + "s?k=" + "+".join(search_text.split(" "))
                     page.goto(search_url)
                     human_behaviour.human_pause(page, 800, 2000)
                     human_behaviour.human_mouse_move(page)   
@@ -55,7 +63,7 @@ class amazon_new_product_price_scraper(scrapy.Spider):
                         
                         
                         if title_elem is None:
-                            print(mouse + ": title cannot be found")
+                            print(search_text + ": title cannot be found")
                             continue
 
                         if review_elem is None:
@@ -80,10 +88,10 @@ class amazon_new_product_price_scraper(scrapy.Spider):
                         clean_title = re.search(r'(.+?)(?:\s*[-,]\s*)',title).group(1).strip() if re.search(r'(.+?)(?:\s*[-,]\s*)',title) else title.strip()
                         price = float(re.search(r"\d[\d,]*(?:\.\d+)?", price_elem.text.strip()).group(0).replace(",", "")) if price_elem else None
 
-                        num_of_ele = len(mouse.split()) + config.NUMBER_OF_EXTRA_WORDS
+                        num_of_ele = len(search_text.split()) + config.NUMBER_OF_EXTRA_WORDS
                         clean_title_v1 = " ".join((clean_title.split())[:num_of_ele])
                         clean_title_v2 = " ".join((title.split())[:num_of_ele])
-                        score = max(fuzz.WRatio(mouse, clean_title_v1), fuzz.WRatio(mouse, clean_title_v2))
+                        score = max(fuzz.WRatio(search_text, clean_title_v1), fuzz.WRatio(search_text, clean_title_v2))
                         ASIN = div['data-asin']
                         product_pool.append({
                             'title': title,
@@ -101,14 +109,14 @@ class amazon_new_product_price_scraper(scrapy.Spider):
                     for product in product_pool:
                         product['score_diff'] = max_score - product['score']
 
-                    exact_words = mouse.lower().split()[1:]
+                    exact_words = search_text.lower().split()[1:]
 
                     filter_no_price_and_name_exists = [p for p in product_pool if p['price'] is not None and all(word in p['clean_title_v2'].lower().split() for word in exact_words)]
                     
                     
                     candidates_for_price = [p for p in filter_no_price_and_name_exists if p['score_diff'] <= config.SIMILARITY_SCORE_DIFFERENCE_THRESHOLD  and all(word not in config.KEYWORDS_TO_EXCLUDE for word in p['clean_title_v2'].lower().split())]
                     if not candidates_for_price:
-                        print(mouse + ": price not found")
+                        print(search_text + ": price not found")
                         continue
 
                     avg_reviews = sum(review['num_of_stars'] * review['num_of_reviews'] for review in candidates_for_price)/len(candidates_for_price)
@@ -124,7 +132,9 @@ class amazon_new_product_price_scraper(scrapy.Spider):
                     human_behaviour.human_mouse_move(page)
                     human_behaviour.human_pause(page, 2000, 5000)
                     data.append({
-                        'product_name': mouse,
+                        'skin_id': mouse['skin_id'],
+                        'product_name': mouse['product_name'],
+                        'colour': mouse['colour'],
                         'ASIN': best_match_for_price['ASIN'],
                         'link': f'https://www.amazon.sg/dp/{best_match_for_price["ASIN"]}',
                         'price': best_match_for_price['price'],
@@ -133,7 +143,9 @@ class amazon_new_product_price_scraper(scrapy.Spider):
                         'sort_by': 'price'
                     })
                     data.append({
-                        'product_name': mouse,
+                        'skin_id': mouse['skin_id'],
+                        'product_name': mouse['product_name'],
+                        'colour': mouse['colour'],
                         'ASIN': best_match_for_reviews['ASIN'],
                         'link': f'https://www.amazon.sg/dp/{best_match_for_reviews["ASIN"]}',
                         'price': best_match_for_reviews['price'],
@@ -143,7 +155,7 @@ class amazon_new_product_price_scraper(scrapy.Spider):
                     })
                 except Exception as e:
                     print(f"failed: {type(e).__name__}: {e}")
-                    failed.append(mouse)
+                    failed.append(search_text)
 
             page.close()
             browser.close()
@@ -152,7 +164,6 @@ class amazon_new_product_price_scraper(scrapy.Spider):
     
     def scrape_amazon_price_from_product_page(self, lst_of_mouse):
         data = []
-        extra = []
         failed = []
 
         with Stealth().use_sync(sync_playwright()) as p:
@@ -165,6 +176,7 @@ class amazon_new_product_price_scraper(scrapy.Spider):
                 )
             page = browser.new_page()
             for mouse in human_behaviour.shuffled_subset(lst_of_mouse):
+                extra = []
                 try:
                     page.goto(mouse['link'])
                     page.evaluate(f"window.scrollBy(0, {random.randint(300, 1000)})")
@@ -192,20 +204,15 @@ class amazon_new_product_price_scraper(scrapy.Spider):
                     m_num = re.search(r"\d[\d,]*(?:\.\d+)?", price_with_currency)
                     value = float(m_num.group(0).replace(",", "")) if m_num else None
 
-                    colour = soup.find('table', class_ = 'a-normal', attrs={'role': 'list'})
-                    if colour is None:
-                        colour = None
-                    else:
-                        colour_row = colour.find('tr', class_='po-color')
-                        colour = colour_row.find('span', class_='po-break-word').text.strip() if colour_row else None
                     data.append({
+                        'skin_id': mouse['skin_id'],
                         'product_name': mouse['product_name'],
                         'date': datetime.date.today(),
                         'currency': currency,
                         'price': value,
                         'num_of_stars': mouse['num_of_stars'],
                         'num_of_reviews': mouse['num_of_reviews'],
-                        'colour': colour,
+                        'colour': mouse['colour'],
                         'store_link': mouse['link'],
                         'store_name': 'Amazon',
                         'sort_by': mouse['sort_by']
@@ -284,7 +291,11 @@ class amazon_new_product_price_scraper(scrapy.Spider):
 
 if __name__ == "__main__":
     scraper = amazon_new_product_price_scraper()
-    lst_of_mouse = ["Logitech G502 LIGHTSPEED", "Logitech G502", "Logitech G502 X"]
+    lst_of_mouse = [
+        {'skin_id': None, 'product_name': "Logitech G502 LIGHTSPEED", 'colour': "Black"},
+        {'skin_id': None, 'product_name': "Logitech G502", 'colour': "Black"},
+        {'skin_id': None, 'product_name': "Logitech G502 X", 'colour': "Black"},
+    ]
     search_data = scraper.scrape_amazon_price(lst_of_mouse)
     print(search_data)
     price_data = scraper.scrape_amazon_price_from_product_page(search_data)

@@ -1,6 +1,8 @@
 .playwright_profile/
+.playwright_profile_acer/
 Extras/
 __pycache__/
 *.pyc
 docs/*
 !docs/testing.md
+logs/

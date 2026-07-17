@@ -1,6 +1,18 @@
 import math
 from playwright.sync_api import sync_playwright, TimeoutError as PlaywrightTimeoutError
 import random
+import time
+
+def polite_delay(base_min=30, base_max=45, long_chance=0.1, long_min=90, long_max=150):
+    """Cooldown between separate product-page visits, so a scraper doesn't
+    hammer a site with back-to-back navigations (the kind of pattern that
+    trips bot-detection). Mostly a short pause, occasionally (10% of the
+    time by default) a longer one - a human doesn't click through pages at a
+    perfectly even cadence."""
+    delay = random.uniform(base_min, base_max)
+    if random.random() < long_chance:
+        delay = random.uniform(long_min, long_max)
+    time.sleep(delay)
 
 def scroll_to_bottom(page):
         last_position = page.evaluate("window.scrollY")

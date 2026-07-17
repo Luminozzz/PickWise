@@ -12,13 +12,15 @@ import unicodedata
 
 class razer_scraper(scrapy.Spider):
     name = "razer_mouse_spider"
-    standard_url = "https://www.razer.com/sg-en/pc/gaming-mice"
+    standard_url = "https://www.razer.com/sg-en/store/gaming-mice"
 
-
-    # Finding all the mouse variation links, e.g. Viper, Naga, Basilisk and etc
-    def scrape_razer_mouse_variations_links(self):
-        data_mouse_variations = []
-        
+    # Scrapes the store listing page for every gaming-mouse product card,
+    # drops bundles/add-ons (docks, pucks, dongles and etc), and collapses
+    # the duplicate per-colour cards Razer renders for the same product down
+    # to a single entry per mouse. Returns {product_name: {'url_id_1': url,
+    # 'colours': [{colour: img_url}, ...]}} - 'colours' is only present when
+    # the product actually has colour variants.
+    def scrape_razer_store_products(self):
         with Stealth().use_sync(sync_playwright()) as p:
             browser = p.chromium.launch_persistent_context(**config.BROWSER_LAUNCH, **config.BROWSER_CONTEXT)
             browser.route(
@@ -29,59 +31,80 @@ class razer_scraper(scrapy.Spider):
                 else route.continue_(),
             )
             page = browser.new_page()
-            page.goto(self.standard_url)
-            page.wait_for_load_state('domcontentloaded',timeout = 100000)
-
+            page.goto(self.standard_url, timeout=60000)
+            page.wait_for_selector('div.card-wrapper-main', timeout=100000)
+            # The grid renders progressively - wait for the card count to
+            # stop growing before reading the page, or a scrape can catch a
+            # partial page and silently drop products (seen with DeathAdder
+            # mice dropping out of a run despite being on the live page).
+            cards_locator = page.locator('div.card-wrapper-main')
+            stable_count = -1
+            for _ in range(20):
+                page.wait_for_timeout(500)
+                count = cards_locator.count()
+                if count == stable_count:
+                    break
+                stable_count = count
             html = page.content()
-
-            soup = BeautifulSoup(html, 'html.parser')
-            opt_1 = soup.find('div', class_ = ['child', 'has-icon']).find_all('a', href = re.compile(r'/sg-en/gaming-mice/'))
-            opt_2 = soup.find('div', class_ = ['child', 'has-icon']).find_all('a', href = re.compile(r'/sg-en/pc/gaming-mice/'))
-            opt_3 = soup.find('div', class_ = ['child', 'has-icon']).find_all('a', href = re.compile(r'/sg-en/productivity/'))
-            mouse_links = opt_1 + opt_2 + opt_3
-            #mouse_links.remove("https://www.razer.com/sg-en/gaming-mice/razer-orochi-v2")
-            # extracts out all the mouse variation links, e.g. Viper, Naga, Basilisk and etc
-            for link in mouse_links :
-                url = urljoin('https://www.razer.com/sg-en/gaming-mice/', link['href'])
-                data_mouse_variations.append(url)
             browser.close()
-        print(data_mouse_variations)
-        return data_mouse_variations
-    
-    def scrape_razer_id_link(self, mouse_variation_links: list):
+
+        soup = BeautifulSoup(html, 'html.parser')
+
+        # Cards are keyed by product slug so the plain "canonical" card (the
+        # one carrying the colour-options list) wins over the duplicate
+        # single-colour cards Razer also renders (e.g. "Viper V4 Pro" vs.
+        # "Viper V4 Pro - Black" / "Viper V4 Pro - White").
+        groups = {}
+        for card in soup.find_all('div', class_ = 'card-wrapper-main'):
+            h3 = card.find('h3')
+            link_el = card.find('a', href = True)
+            if h3 is None or link_el is None:
+                continue
+
+            raw_name = unicodedata.normalize('NFKD', h3.get_text(strip=True))
+            if any(keyword in raw_name.lower() for keyword in config.RAZER_STORE_EXCLUDE_KEYWORDS):
+                continue
+
+            href = urljoin('https://www.razer.com/', link_el['href']).split('?')[0]
+            slug_match = re.search(r'/gaming-mice/([^/]+)/', href)
+            slug = slug_match.group(1) if slug_match else href
+            product_name = raw_name.split(' - ')[0].strip()
+            colour_ul = card.find('ul', class_ = ['options-colordesign', 'options'])
+
+            entry = groups.get(slug)
+            if entry is None:
+                groups[slug] = {
+                    'product_name': product_name,
+                    'url_id_1': href,
+                    'colour_ul': colour_ul,
+                }
+            elif colour_ul is not None and entry['colour_ul'] is None:
+                entry['product_name'] = product_name
+                entry['url_id_1'] = href
+                entry['colour_ul'] = colour_ul
+
         data = {}
+        for info in groups.values():
+            colours = []
+            seen_colours = set()
+            ul = info['colour_ul']
+            if ul is not None:
+                for li in ul.find_all('li'):
+                    span = li.find('span')
+                    if span is None:
+                        continue
+                    colour_name = span.get('data-value')
+                    thumbnail = span.get('data-thumbnail')
+                    if not colour_name or not thumbnail or colour_name in seen_colours:
+                        continue
+                    seen_colours.add(colour_name)
+                    colours.append({colour_name: razer_full_res(thumbnail)})
 
-        with Stealth().use_sync(sync_playwright()) as p:
-            browser = p.chromium.launch_persistent_context(**config.BROWSER_LAUNCH, **config.BROWSER_CONTEXT)
-            browser.route(
-                "**/*",
-                lambda route: route.abort()
-                if re.search(r"\.(png|jpe?g|gif|webp|svg|avif|woff2?|ttf|mp4)(\?|$)",
-                            route.request.url, re.IGNORECASE)
-                else route.continue_(),
-            )
-            for mv_link in mouse_variation_links:
-                page = browser.new_page()
-                try:
-                    page.goto(mv_link, timeout = 60000)
-                    page.wait_for_load_state('domcontentloaded', timeout = 100000)
+            entry = {'url_id_1': info['url_id_1']}
+            if colours:
+                entry['colours'] = colours
+            data[info['product_name']] = entry
 
-                    html = page.content()
-
-                    soup = BeautifulSoup(html, 'html.parser')
-                    sections = soup.find_all('section', class_ = ['tile-0', 'tile'])
-                    for section in sections:
-                        url = section.find('a',href=re.compile(r'/sg-en/gaming-mice/.+/buy'))
-                        find_name = section.find('h3').get_text(strip=True)
-                        mouse_name = unicodedata.normalize('NFKD', find_name)
-                        if url is None or find_name is None:
-                            continue
-                        data[mouse_name] = {
-                            'url_id_1': urljoin('https://www.razer.com/', url['href'])
-                        }
-                finally:
-                    page.close()
-            browser.close()
         print(data)
         return data
 
@@ -104,9 +127,90 @@ class razer_scraper(scrapy.Spider):
                 page.wait_for_selector('ul.product-tech-spec > li.row', timeout=4000)
                 return True
             except PlaywrightTimeoutError:
-                continue 
+                continue
         return False
-    
+
+    def _product_gallery_images(self, page, max_images=5):
+        soup = BeautifulSoup(page.content(), 'html.parser')
+        container = soup.find('div', class_='product-image')
+        if container is None:
+            return []
+        images = []
+        seen = set()
+        for img in container.find_all('img', src=re.compile(r'https://assets3\.razerzone\.com/')):
+            src = razer_full_res(img['src'])
+            if src not in seen:
+                seen.add(src)
+                images.append(src)
+            if len(images) >= max_images:
+                break
+        return images
+
+    # Colour variants + up to `max_images` gallery renders for each one.
+    # Razer's colour swatches aren't an in-place SPA swap - clicking one
+    # actually routes to that colour's own SKU URL (Angular), so each
+    # non-active swatch needs a real click followed by enough of a wait for
+    # the new SKU's gallery to load. The click is dispatched via JS (like
+    # _expand_specs already does) rather than a Playwright locator click,
+    # since the cookie-consent overlay (div.cky-overlay) sits over the
+    # swatches and fails Playwright's actionability check even though the
+    # button is genuinely clickable underneath it.
+    def extract_colours(self, page, max_images=5):
+        soup = BeautifulSoup(page.content(), 'html.parser')
+        group = soup.select_one('div.variant-category-color')
+        if group is None:
+            images = self._product_gallery_images(page, max_images)
+            return [{'Default': images}] if images else []
+
+        swatches = [
+            (b.get('aria-label'), b.get('aria-current') == 'page')
+            for b in group.select('button[role="link"]')
+            if b.get('aria-label')
+        ]
+
+        colours = []
+        for label, is_active in swatches:
+            if is_active:
+                images = self._product_gallery_images(page, max_images)
+            else:
+                try:
+                    clicked = page.evaluate(
+                        """(label) => {
+                            const buttons = document.querySelectorAll(
+                                'div.variant-category-color button[role="link"]');
+                            for (const b of buttons) {
+                                if (b.getAttribute('aria-label') === label) {
+                                    b.click();
+                                    return true;
+                                }
+                            }
+                            return false;
+                        }""",
+                        label,
+                    )
+                    if not clicked:
+                        continue
+                    # Wait for the DOM to actually confirm the new colour is
+                    # selected before reading the gallery - a flat sleep here
+                    # is flaky, since the Angular route swap that follows a
+                    # click doesn't always finish within a fixed delay.
+                    page.wait_for_function(
+                        """(label) => {
+                            const el = document.querySelector(
+                                'div.variant-category-color .variant-selected-item-info');
+                            return !!el && el.innerText.includes(label);
+                        }""",
+                        arg=label,
+                        timeout=10000,
+                    )
+                    page.wait_for_timeout(800)  # let the gallery images swap in
+                except Exception:
+                    continue
+                images = self._product_gallery_images(page, max_images)
+            if images:
+                colours.append({label: images})
+        return colours
+
     def scraper_razer_mouse_details(self, mouse_links: dict[dict]):
         data = []
         failed = []
@@ -179,6 +283,13 @@ class razer_scraper(scrapy.Spider):
                             })
                             rows_added += 1
                         print(f"   ok - {rows_added} spec rows")
+
+                        data.append({
+                            'product_name': name,
+                            'feature': 'colours',
+                            'value': self.extract_colours(page),
+                        })
+
                         ok = True
                         break  # success - stop retrying
 
@@ -198,6 +309,7 @@ class razer_scraper(scrapy.Spider):
         format = {
             'link': None,
             'img_link': None,
+            'colours': [],
             'ergonomy': "none",
             'left_fit': False,
             'battery_life': (0,0),
@@ -227,7 +339,7 @@ class razer_scraper(scrapy.Spider):
                 data[product_name]['brand_name'] = product_name.split(None, 1)[0]
 
             # default values
-            if feature in ["link", "img_link"]:
+            if feature in ["link", "img_link", "colours"]:
                 data[product_name][feature] = value
                 continue
             result = self.extract_feature(feature, value)
@@ -332,8 +444,11 @@ class razer_scraper(scrapy.Spider):
         if match_month:
             months = int(match_month.group(1)) * 30 * 24
             return (months, months)
-                
-        match_batt = re.findall(r'(\d+)\s*hours?', value, re.IGNORECASE)
+        match_days = re.search(r'(\d+)\s*days?', value, re.IGNORECASE)
+        if match_days:
+            days = int(match_days.group(1)) * 24
+            return (days, days)
+        match_batt = re.findall(r'(\d+)\s*(?:hours?|hrs?|h)\b', value, re.IGNORECASE)
         if match_batt:
             hours = [int(match) for match in match_batt]
             return (min(hours), max(hours))
@@ -344,11 +459,11 @@ class razer_scraper(scrapy.Spider):
         return int(match.group(1)) if match else 0
     
     def tracking_speed(self, value: str) -> int:
-        match = re.search(r'(\d+)', value)
+        match = re.search(r'(\d+)\s*g\b', value, re.IGNORECASE)
         return int(match.group(1)) if match else 0
-    
+
     def max_acceleration(self, value: str) -> int:
-        match = re.search(r'(\d+)', value)
+        match = re.search(r'(\d+)\s*ips\b', value, re.IGNORECASE)
         return int(match.group(1)) if match else 0
     
     def weight(self, value: str) -> float:
@@ -379,10 +494,19 @@ class razer_scraper(scrapy.Spider):
         
     def run(self):
         spider = razer_scraper()
-        mouse_variation_links = spider.scrape_razer_mouse_variations_links()
-        mouse_links = spider.scrape_razer_id_link(mouse_variation_links)
+        mouse_links = spider.scrape_razer_store_products()
         data = spider.scraper_razer_mouse_details(mouse_links)
         cleaned_data = spider.razer_data_cleaning(data)
+        for name, attrs in cleaned_data.items():
+            if attrs.get('colours'):
+                continue  # already populated with per-colour galleries
+            # extract_colours came back empty (e.g. a transient failure) -
+            # fall back to the store listing's single thumbnail per colour,
+            # and if even that's missing, default to "Default" using the
+            # mouse's own product render rather than issuing another request.
+            colours = mouse_links.get(name, {}).get('colours', [])
+            attrs['colours'] = colours or [{'Default': attrs.get('img_link')}]
+        print(cleaned_data)
         return cleaned_data
 
 if __name__ == "__main__":

@@ -27,6 +27,30 @@ def logitech_hi_res(url):
     return url
 
 
+def ugreen_hi_res(url):
+    """UGreen's Shopify CDN serves gallery images as
+    //www.ugreen.com/cdn/shop/files/<name>.<ext>?v=<version>&width=<px>.
+    Dropping the width param yields the original full-resolution file (the
+    largest entry in the tag's own srcset); also normalises the
+    protocol-relative URL to https so it's usable outside a browser."""
+    if not url:
+        return url
+    if url.startswith("//"):
+        url = "https:" + url
+    parts = urllib.parse.urlsplit(url)
+    query = [(k, v) for k, v in urllib.parse.parse_qsl(parts.query) if k != "width"]
+    return urllib.parse.urlunsplit((parts.scheme, parts.netloc, parts.path, urllib.parse.urlencode(query), parts.fragment))
+
+
+def hp_dedupe_gallery(url):
+    """HP's CDN (sg-media.apjonlinecdn.com) serves the same image under both
+    its original path and a resized /catalog/product/cache/<hash>/ path.
+    Strip the cache segment so both variants collapse to one canonical URL."""
+    if not url:
+        return url
+    return re.sub(r"/cache/[a-f0-9]+/", "/", url)
+
+
 def razer_primary_render(product_url, timeout=30):
     """Fetch a Razer product page and return its PRIMARY transparent product
     render (decoded to full resolution) from the page's JSON-LD. Useful for
