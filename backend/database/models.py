@@ -62,13 +62,19 @@ class Mouse(Base):
     number_of_buttons = Column(Integer)
     min_battery_life = Column(Integer)
     max_battery_life = Column(Integer)
-    min_polling_rate = Column(Integer)
-    max_polling_rate = Column(Integer)
     other_features = Column(String)
 
     gaming_specs = relationship("Gaming_Mouse", backref="mouse", uselist=False)
     skins = relationship("Mouse_Skins", backref="mouse", lazy=True)
     connectivity = relationship("Mouse_Connectivity", backref="mouse", uselist=False)
+
+    @property
+    def max_polling_rate(self):
+        # Polling rate lives on gaming_mouse_specs now, not mouse_model. Exposed
+        # here so existing callers can keep reading mouse.max_polling_rate; it is
+        # None for a mouse with no gaming specs. gaming_specs is eager-loaded on
+        # the endpoints that use it, so reading this never triggers a lazy load.
+        return self.gaming_specs.max_polling_rate if self.gaming_specs else None
 
 
 class Gaming_Mouse(Base):
@@ -78,6 +84,7 @@ class Gaming_Mouse(Base):
     rgb = Column(Boolean, default=False)
     acceleration = Column(Integer)  # Max linear acceleration in G before tracking fails
     tracking_speed = Column(Integer)  # Tracking speed in inches per second (IPS)
+    max_polling_rate = Column(Integer)  # Hz
 
 
 class Mouse_Connectivity(Base):
