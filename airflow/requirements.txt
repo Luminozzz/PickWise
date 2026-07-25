@@ -1,0 +1,30 @@
+# Runtime deps for backend/database/seed.py and everything under scrapers/.
+#
+# sqlalchemy/psycopg2-binary/python-dotenv are deliberately NOT pinned here -
+# apache/airflow:2.10.5 already ships sqlalchemy 1.4.54 (its own ORM models
+# aren't compatible with 2.0.x's stricter declarative-annotation checks) plus
+# psycopg2 and python-dotenv. backend/database/models.py only uses classic
+# Column()/declarative_base() style (no Mapped[]/2.0-only APIs), so it runs
+# fine against 1.4.54 - pinning a newer sqlalchemy here previously broke
+# Airflow's own TaskInstance model at import time. Installed with
+# --constraint against Airflow's own constraints file (see Dockerfile) so
+# pip can't silently upgrade anything Airflow itself depends on.
+
+asyncpg==0.30.0
+
+# --- scrapers/ ---
+# beautifulsoup4/lxml/requests left unpinned - Airflow's own constraints
+# file already pins these to versions it's tested against (see Dockerfile),
+# and an exact pin here that disagrees with the constraint is a hard
+# ResolutionImpossible, not a soft override. bs4/lxml/requests's APIs the
+# scrapers use are stable across these minor versions either way.
+playwright==1.60.0
+playwright-stealth==2.0.3
+beautifulsoup4
+lxml
+RapidFuzz==3.14.5
+requests
+requests-file
+Scrapy==2.16.0
+scrapy-playwright==0.0.46
+word2num==0.1.2

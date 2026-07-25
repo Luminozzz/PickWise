@@ -120,7 +120,10 @@ CONFIDENCE_LEVEL = 10
 
 NUMBER_OF_EXTRA_WORDS = 2
 
-KEYWORDS_TO_EXCLUDE = ['set', 'combo', 'grip', 'case', 'casing','skates', 'glides', 'tape', 'supergrip', 'gears']
+# Narrow, unambiguous accessory nouns only - broader words like "charging"
+# would wrongly reject genuine wireless-charging mice, so anything picked
+# here has to be a thing sold *for* a mouse, never a feature *of* one.
+KEYWORDS_TO_EXCLUDE = ['set', 'combo', 'grip', 'case', 'casing','skates', 'glides', 'tape', 'supergrip', 'gears', 'cable', 'cover', 'charger', 'dock', 'sleeve', 'adapter']
 
 
 # =======================
