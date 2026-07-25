@@ -12,9 +12,10 @@ from sqlalchemy import (
     JSON,
     Enum as SAEnum,
     ForeignKey,
-    UniqueConstraint,
+    Index,
     create_engine,
     func,
+    text,
 )
 from sqlalchemy.orm import relationship, declarative_base, sessionmaker
 
@@ -119,16 +120,29 @@ class Price_History(Base):
     __tablename__ = "price_history"
     # One price per (skin, store, day). mouse_id points at a specific
     # Mouse_Skins row (never mouse_model directly) - colour is implied via
-    # that skin, so it's not duplicated here. NULLS NOT DISTINCT so rows with
-    # a NULL sort_by still can't duplicate (Postgres 15+).
+    # that skin, so it's not duplicated here. sort_by is the only nullable
+    # column in this tuple, so two partial unique indexes (split on
+    # sort_by IS NULL) give the same "NULL still can't duplicate" guarantee
+    # as postgresql_nulls_not_distinct=True, without needing SQLAlchemy
+    # 2.0.35+ - the Airflow container's SQLAlchemy is pinned to 1.4.54 (see
+    # airflow/requirements.txt) and doesn't support that constraint kwarg.
     __table_args__ = (
-        UniqueConstraint(
+        Index(
+            "uq_price_history_mouse_store_date_sort_by",
             "mouse_id",
             "store_name",
             "date",
             "sort_by",
-            name="uq_price_history_mouse_store_date",
-            postgresql_nulls_not_distinct=True,
+            unique=True,
+            postgresql_where=text("sort_by IS NOT NULL"),
+        ),
+        Index(
+            "uq_price_history_mouse_store_date_no_sort_by",
+            "mouse_id",
+            "store_name",
+            "date",
+            unique=True,
+            postgresql_where=text("sort_by IS NULL"),
         ),
     )
 
@@ -181,7 +195,13 @@ def _make_engine():
             "sslmode": "require",
             "options": f"-c search_path={DB_SCHEMA}",
         }
-    return create_engine(url, connect_args=connect_args, future=True)
+    # pool_pre_ping: scraping runs hold a session for a long time (browser
+    # navigation + polite delays between every product), so the pooled
+    # connection often sits idle long enough for the network path or the DB
+    # itself to drop it silently - ping and transparently reconnect instead
+    # of failing the next query with "server closed the connection
+    # unexpectedly".
+    return create_engine(url, connect_args=connect_args, pool_pre_ping=True, future=True)
 
 
 engine = _make_engine()

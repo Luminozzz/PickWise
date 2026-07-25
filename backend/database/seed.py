@@ -1,5 +1,11 @@
 import sys, os
-sys.path.insert(0, os.path.join(os.path.dirname(__file__), '..', '..'))
+# Two entries, matching what run_price_update.ps1 used to set via
+# PYTHONPATH: repo root (for `backend.database.seed`, how the Airflow DAG
+# imports this module) and backend/ itself (for `database.models` below,
+# which this file imports as a top-level package).
+_here = os.path.dirname(__file__)
+sys.path.insert(0, os.path.join(_here, '..', '..'))
+sys.path.insert(0, os.path.join(_here, '..'))
 
 from database.models import (
     Mouse,
@@ -26,7 +32,10 @@ BRAND_EXTRACTORS = {
 }
 
 OFFICIAL_STORE = {
-    'Razer': (razer_price_scraper)
+    'Razer': razer_price_scraper,
+    'Logitech': logitech_price_scraper,
+    'HP': hp_price_scraper,
+    'Asus': asus_price_scraper,
 }
 
 session = SessionLocal()
@@ -352,13 +361,96 @@ def add_new_product_price():
     finally:
         write_session.close()
 
+def add_shopee_product_price():
+    init_db()
+
+    read_session = SessionLocal()
+    try:
+        # Ordered by id, not joined to Mouse.link like Amazon's is_default -
+        # Shopee's "default" is purely positional (the first/lowest-id skin
+        # created for a mouse), so the flag below is derived straight from
+        # this ordering rather than any buy_link comparison.
+        skins = (
+            read_session.query(
+                Mouse_Skins.id, Mouse_Skins.product_name, Mouse_Skins.colour,
+            )
+            .order_by(Mouse_Skins.id)
+            .all()
+        )
+    finally:
+        read_session.close()
+
+    # Only the default skin actually gets searched on Shopee (see
+    # shopee_price_scraper.scrape_shopee_price) - every other skin here just
+    # tells it which of Shopee's own colour variants are already ours to
+    # match against, never triggering a search of its own.
+    seen_products = set()
+    product_colours = []
+    for s in skins:
+        is_default = s.product_name not in seen_products
+        seen_products.add(s.product_name)
+        product_colours.append({
+            'skin_id': s.id,
+            'product_name': s.product_name,
+            'colour': s.colour,
+            'is_default': is_default,
+        })
+
+    scraper = shopee_new_product_price_scraper()
+    revised_data = scraper.run(product_colours)
+
+    seen = {}
+    for item in revised_data:
+        # Every row the scraper emits already carries the skin_id it matched
+        # the colour against - unlike Amazon, there's no fallback needed
+        # here since a colour Shopee offers that isn't already one of ours
+        # never gets a row emitted in the first place.
+        skin_id = item.get('skin_id')
+        if skin_id is None:
+            continue
+        key = (skin_id, item['store_name'], item['date'], item['sort_by'])
+        seen[key] = {
+            'mouse_id': skin_id,
+            'product_name': item['product_name'],
+            'date': item['date'],
+            'currency': item['currency'],
+            'price': item['price'],
+            'num_of_stars': item['num_of_stars'],
+            'num_of_reviews': item['num_of_reviews'],
+            'store_link': item['store_link'],
+            'store_name': item['store_name'],
+            'sort_by': Sort_By(item['sort_by']),
+        }
+
+    write_session = SessionLocal()
+    try:
+        for row in seen.values():
+            stmt = pg_insert(Price_History).values([row])
+            stmt = stmt.on_conflict_do_update(
+                constraint='uq_price_history_mouse_store_date',
+                set_={
+                    'price': stmt.excluded.price,
+                    'num_of_stars': stmt.excluded.num_of_stars,
+                    'num_of_reviews': stmt.excluded.num_of_reviews,
+                    'store_link': stmt.excluded.store_link,
+                    'currency': stmt.excluded.currency,
+                }
+            )
+            write_session.execute(stmt)
+        write_session.commit()
+    except Exception:
+        write_session.rollback()
+        raise
+    finally:
+        write_session.close()
+
 def add_official_store_product_price():
     for brand_name, price_scraper in OFFICIAL_STORE.items():
         scraper = price_scraper()
         init_db()
         data = []
         skin_lookup = {}  # (product_name, colour) -> skin id
-        lst_of_mouse_filtered_brand = session.query(Mouse).filter_by(brand_name='Razer').all()
+        lst_of_mouse_filtered_brand = session.query(Mouse).filter_by(brand_name=brand_name).all()
 
         for mouse in lst_of_mouse_filtered_brand:
             skins = session.query(Mouse_Skins).filter_by(mouse_id=mouse.id).order_by(Mouse_Skins.id).all()
@@ -415,5 +507,7 @@ if __name__ == "__main__":
         add_mouse_buy_links()
     if sys.argv[1] == 'add_new_product_price':
         add_new_product_price()
+    if sys.argv[1] == 'add_shopee_product_price':
+        add_shopee_product_price()
     if sys.argv[1] == 'add_official_store_product_price':
         add_official_store_product_price()

@@ -234,7 +234,7 @@ def _type_of_user_weight(facts: dict, mouse) -> float:
     user_type = facts.get("user_type")
     gaming_mouse = mouse.gaming_specs
     battery_life = mouse.min_battery_life
-    required_battery_life = battery_life > 60
+    required_battery_life = battery_life is not None and battery_life > 60
 
     if user_type == User_Type.GAMER:
         if gaming_mouse is not None:
@@ -251,7 +251,7 @@ def _type_of_user_explanation(facts: dict, mouse) -> str:
     user_type = facts.get("user_type")
     gaming_mouse = mouse.gaming_specs
     battery_life = mouse.min_battery_life
-    has_good_battery = battery_life > 60
+    has_good_battery = battery_life is not None and battery_life > 60
 
     if user_type == User_Type.GAMER:
         if gaming_mouse is not None:
@@ -264,7 +264,10 @@ def _type_of_user_explanation(facts: dict, mouse) -> str:
         if gaming_mouse is not None and gaming_mouse.rgb:
             issues.append("RGB lighting can look out of place in a professional office setting")
         if not has_good_battery:
-            issues.append(f"Battery life of {battery_life}h is under 60h — you may need to recharge frequently at the office")
+            if battery_life is None:
+                issues.append("Battery life isn't listed for this mouse")
+            else:
+                issues.append(f"Battery life of {battery_life}h is under 60h — you may need to recharge frequently at the office")
         else:
             positives.append(f"Good battery life ({battery_life}h) keeps you productive without interruptions")
         if gaming_mouse is None:
@@ -275,6 +278,8 @@ def _type_of_user_explanation(facts: dict, mouse) -> str:
 
     # STUDENT
     if not has_good_battery:
+        if battery_life is None:
+            return "Battery life isn't listed for this mouse"
         return f"Battery life of {battery_life}h is under 60h — may run low during long study sessions away from a charger"
     return f"Battery life of {battery_life}h is solid for a student who is often away from a power source"
 
@@ -352,7 +357,8 @@ def _type_of_game_rule_type(facts: dict) -> RuleType:
 def _type_of_game_compatibility(facts: dict, mouse) -> bool:
     type_of_game = facts.get("type_of_game")
     if type_of_game == Game_Type.MMORPG:
-        return mouse.number_of_buttons >= config.MINIMUM_BUTTONS_MMORPG
+        buttons = mouse.number_of_buttons
+        return buttons is not None and buttons >= config.MINIMUM_BUTTONS_MMORPG
     return True
 
 def _type_of_game_weight(facts: dict, mouse) -> float:
@@ -361,8 +367,7 @@ def _type_of_game_weight(facts: dict, mouse) -> float:
 def _type_of_game_points(facts: dict, mouse) -> float:
     type_of_game = facts.get("type_of_game")
     gaming_mouse_specs = mouse.gaming_specs
-    if gaming_mouse_specs is not None:
-        tracking_speed = gaming_mouse_specs.tracking_speed
+    tracking_speed = gaming_mouse_specs.tracking_speed if gaming_mouse_specs is not None else None
     dpi = mouse.max_DPI
     polling_rate = gaming_mouse_specs.max_polling_rate if gaming_mouse_specs is not None else None
     weight = mouse.weight
@@ -370,19 +375,19 @@ def _type_of_game_points(facts: dict, mouse) -> float:
     if type_of_game == Game_Type.MMORPG or type_of_game == Game_Type.NOT_MENTIONED:
         return 0.0
     elif type_of_game == Game_Type.FPS:
-        required_dpi = dpi >= config.REQUIRED_DPI_FPS
-        required_mouse_weight = weight <= config.REQUIRED_MOUSE_WEIGHT_FPS
+        required_dpi = dpi is not None and dpi >= config.REQUIRED_DPI_FPS
+        required_mouse_weight = weight is not None and weight <= config.REQUIRED_MOUSE_WEIGHT_FPS
         if gaming_mouse_specs is not None:
-            required_tracking_speed = tracking_speed >= config.REQUIRED_TRACKING_SPEED_FPS
+            required_tracking_speed = tracking_speed is not None and tracking_speed >= config.REQUIRED_TRACKING_SPEED_FPS
             return (required_dpi + required_mouse_weight + required_tracking_speed) * config.MODERATE_FACTOR
         return (required_dpi + required_mouse_weight) * config.MAJOR_FACTOR
     elif type_of_game == Game_Type.RTS:
-        required_dpi = dpi >= config.REQUIRED_DPI_RTS
-        required_polling_rate = (polling_rate or 0) >= config.REQUIRED_POLLING_RATE_RTS
+        required_dpi = dpi is not None and dpi >= config.REQUIRED_DPI_RTS
+        required_polling_rate = polling_rate is not None and polling_rate >= config.REQUIRED_POLLING_RATE_RTS
         return (required_dpi + required_polling_rate) * config.MODERATE_FACTOR
     elif type_of_game == Game_Type.MOBA:
-        required_dpi = dpi >= config.REQUIRED_DPI_MOBA
-        required_polling_rate = (polling_rate or 0) >= config.REQUIRED_POLLING_RATE_MOBA
+        required_dpi = dpi is not None and dpi >= config.REQUIRED_DPI_MOBA
+        required_polling_rate = polling_rate is not None and polling_rate >= config.REQUIRED_POLLING_RATE_MOBA
         return (required_dpi + required_polling_rate) * config.NORMAL_FACTOR
     return 0.0
 
@@ -395,6 +400,11 @@ def _type_of_game_explanation(facts: dict, mouse) -> str:
     weight = mouse.weight
 
     if type_of_game == Game_Type.MMORPG:
+        if buttons is None:
+            return (
+                f"Button count isn't listed for this mouse — MMORPGs need at least "
+                f"{config.MINIMUM_BUTTONS_MMORPG} for ability bindings"
+            )
         if buttons < config.MINIMUM_BUTTONS_MMORPG:
             return (
                 f"MMORPGs need at least {config.MINIMUM_BUTTONS_MMORPG} buttons for ability bindings — "
@@ -404,15 +414,19 @@ def _type_of_game_explanation(facts: dict, mouse) -> str:
 
     if type_of_game == Game_Type.FPS:
         issues, positives = [], []
-        if dpi >= config.REQUIRED_DPI_FPS:
+        if dpi is None:
+            issues.append("DPI isn't listed for this mouse")
+        elif dpi >= config.REQUIRED_DPI_FPS:
             positives.append(f"high DPI ({dpi}) for precise aiming")
         else:
             issues.append(f"DPI of {dpi} is below the {config.REQUIRED_DPI_FPS} recommended for FPS")
-        if weight <= config.REQUIRED_MOUSE_WEIGHT_FPS:
+        if weight is None:
+            issues.append("Weight isn't listed for this mouse")
+        elif weight <= config.REQUIRED_MOUSE_WEIGHT_FPS:
             positives.append(f"lightweight at {weight}g for fast flicks")
         else:
             issues.append(f"at {weight}g it is heavier than the recommended {config.REQUIRED_MOUSE_WEIGHT_FPS}g for FPS")
-        if gaming_specs is not None and gaming_specs.tracking_speed < config.REQUIRED_TRACKING_SPEED_FPS:
+        if gaming_specs is not None and gaming_specs.tracking_speed is not None and gaming_specs.tracking_speed < config.REQUIRED_TRACKING_SPEED_FPS:
             issues.append(f"tracking speed of {gaming_specs.tracking_speed} IPS is below the {config.REQUIRED_TRACKING_SPEED_FPS} IPS ideal for FPS")
         if issues:
             return "FPS concerns: " + "; ".join(issues)
@@ -420,7 +434,9 @@ def _type_of_game_explanation(facts: dict, mouse) -> str:
 
     if type_of_game == Game_Type.RTS:
         issues, positives = [], []
-        if dpi >= config.REQUIRED_DPI_RTS:
+        if dpi is None:
+            issues.append("DPI isn't listed for this mouse")
+        elif dpi >= config.REQUIRED_DPI_RTS:
             positives.append(f"DPI of {dpi} suits rapid unit selection")
         else:
             issues.append(f"DPI of {dpi} is below the {config.REQUIRED_DPI_RTS} recommended for RTS")
@@ -436,7 +452,9 @@ def _type_of_game_explanation(facts: dict, mouse) -> str:
 
     if type_of_game == Game_Type.MOBA:
         issues, positives = [], []
-        if dpi >= config.REQUIRED_DPI_MOBA:
+        if dpi is None:
+            issues.append("DPI isn't listed for this mouse")
+        elif dpi >= config.REQUIRED_DPI_MOBA:
             positives.append(f"DPI of {dpi} supports accurate skill shots")
         else:
             issues.append(f"DPI of {dpi} is below the {config.REQUIRED_DPI_MOBA} recommended for MOBA")
@@ -455,6 +473,8 @@ def _type_of_game_explanation(facts: dict, mouse) -> str:
 
 def _mouse_weight_weightage(facts: dict, mouse) -> float:
     weight = mouse.weight
+    if weight is None:
+        return 0.0
     if weight <= config.LIGHT_WEIGHT:
         base = config.MAJOR_FACTOR
     elif weight <= config.MODERATE_WEIGHT:
@@ -465,6 +485,8 @@ def _mouse_weight_weightage(facts: dict, mouse) -> float:
 
 def _mouse_weight_explanation(facts: dict, mouse) -> str:
     weight = mouse.weight
+    if weight is None:
+        return "Weight isn't listed for this mouse"
     if weight <= config.LIGHT_WEIGHT:
         return f"At {weight}g this is a lightweight mouse — ideal for fast flicks and low fatigue during long sessions"
     elif weight <= config.MODERATE_WEIGHT:
@@ -527,9 +549,9 @@ def _travel_portability_weight(facts: dict, mouse) -> float:
     usage = facts.get("travel_portability")
     weight = mouse.weight
     conn = mouse.connectivity
-    bluetooth = conn.bluetooth
-    dongle = conn.dongle
-    required_weight = weight <= config.REQUIRED_WEIGHT_PORT
+    bluetooth = conn.bluetooth if conn else False
+    dongle = conn.dongle if conn else False
+    required_weight = weight is not None and weight <= config.REQUIRED_WEIGHT_PORT
     is_wireless = bluetooth or dongle
 
     if usage == Usage.MOST_OF_THE_TIME:
@@ -566,7 +588,9 @@ def _travel_portability_explanation(facts: dict, mouse) -> str:
     else:
         conn_type = "Bluetooth" if bluetooth else "wireless dongle"
         positives.append(f"wireless ({conn_type})")
-    if weight > config.REQUIRED_WEIGHT_PORT:
+    if weight is None:
+        issues.append("weight isn't listed for this mouse")
+    elif weight > config.REQUIRED_WEIGHT_PORT:
         issues.append(f"heavier than the {config.REQUIRED_WEIGHT_PORT}g portability threshold at {weight}g")
     else:
         positives.append(f"light at {weight}g")
@@ -579,7 +603,8 @@ def _travel_portability_explanation(facts: dict, mouse) -> str:
 
 def _extra_buttons_weight_student(facts: dict, mouse) -> float:
     user = facts.get("extra_buttons")
-    extra_buttons = mouse.number_of_buttons >= config.NUMBER_OF_BUTTONS
+    buttons = mouse.number_of_buttons
+    extra_buttons = buttons is not None and buttons >= config.NUMBER_OF_BUTTONS
     if user == Preferability.YES:
         return extra_buttons * config.MODERATE_FACTOR
     elif user == Preferability.PREFERABLY:
@@ -589,15 +614,19 @@ def _extra_buttons_weight_student(facts: dict, mouse) -> float:
 def _extra_buttons_explanation_student(facts: dict, mouse) -> str:
     user = facts.get("extra_buttons")
     buttons = mouse.number_of_buttons
-    has_extra = buttons >= config.NUMBER_OF_BUTTONS
+    has_extra = buttons is not None and buttons >= config.NUMBER_OF_BUTTONS
 
     if user == Preferability.YES:
         if has_extra:
             return f"This mouse has {buttons} buttons, giving you the extra keys needed for shortcuts and macros"
+        if buttons is None:
+            return f"Button count isn't listed for this mouse, but you need at least {config.NUMBER_OF_BUTTONS} for shortcuts and macros"
         return f"You need extra buttons, but this mouse only has {buttons} (minimum {config.NUMBER_OF_BUTTONS} required)"
     if user == Preferability.PREFERABLY:
         if has_extra:
             return f"This mouse has {buttons} buttons — a nice bonus for productivity"
+        if buttons is None:
+            return "Button count isn't listed for this mouse"
         return f"You'd prefer extra buttons; this mouse only has {buttons}"
     return "Extra buttons are not a requirement for you"
 
@@ -672,7 +701,8 @@ def _work_long_hours_explanation(facts: dict, mouse) -> str:
 
 def _extra_buttons_weight_office(facts: dict, mouse) -> float:
     user = facts.get("extra_buttons")
-    extra_buttons = mouse.number_of_buttons >= config.NUMBER_OF_BUTTONS
+    buttons = mouse.number_of_buttons
+    extra_buttons = buttons is not None and buttons >= config.NUMBER_OF_BUTTONS
     if user == Preferability.YES:
         return extra_buttons * config.MODERATE_FACTOR
     elif user == Preferability.PREFERABLY:
@@ -682,15 +712,19 @@ def _extra_buttons_weight_office(facts: dict, mouse) -> float:
 def _extra_buttons_explanation_office(facts: dict, mouse) -> str:
     user = facts.get("extra_buttons")
     buttons = mouse.number_of_buttons
-    has_extra = buttons >= config.NUMBER_OF_BUTTONS
+    has_extra = buttons is not None and buttons >= config.NUMBER_OF_BUTTONS
 
     if user == Preferability.YES:
         if has_extra:
             return f"This mouse has {buttons} buttons, ideal for assigning office shortcuts and macros"
+        if buttons is None:
+            return f"Button count isn't listed for this mouse, but you need at least {config.NUMBER_OF_BUTTONS} for shortcuts"
         return f"You need extra buttons for shortcuts, but this mouse only has {buttons} (minimum {config.NUMBER_OF_BUTTONS} required)"
     if user == Preferability.PREFERABLY:
         if has_extra:
             return f"This mouse has {buttons} buttons — useful for productivity shortcuts"
+        if buttons is None:
+            return "Button count isn't listed for this mouse"
         return f"You'd prefer extra buttons for macros; this mouse only has {buttons}"
     return "Extra shortcut buttons are not a requirement for you"
 

@@ -6,3 +6,6 @@ __pycache__/
 docs/*
 !docs/testing.md
 logs/
+
+airflow/.env
+airflow/logs/
