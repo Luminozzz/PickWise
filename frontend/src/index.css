@@ -24,12 +24,12 @@
   --accent: #F7B58A;
   --accent-soft: #E6A0C7;
 
-  /* Derived from the two above, not new brand colours. Kept deliberately faint:
-     an opaque accent in a box-shadow is near-solid at the element's edge and
-     reads as a rim, which is the opposite of a glow. These are for a backlight
-     you notice without it announcing itself. */
-  --accent-glow: color-mix(in srgb, var(--accent) 30%, transparent);
-  --accent-glow-soft: color-mix(in srgb, var(--accent-soft) 14%, transparent);
+  /* Derived from the two above, not new brand colours. Kept faint on purpose: an
+     opaque accent in a box-shadow is near-solid at the element's edge and reads
+     as a rim, which is the opposite of a glow. These are for a backlight you
+     notice without it announcing itself. */
+  --accent-glow: color-mix(in srgb, var(--accent) 38%, transparent);
+  --accent-glow-soft: color-mix(in srgb, var(--accent-soft) 19%, transparent);
 
   /* Comet tail / horizon */
   --comet-magenta: #C7509E;
@@ -185,6 +185,9 @@ button {
   color: #061018;
   border-color: transparent;
   background: linear-gradient(135deg, var(--primary), var(--secondary));
+  /* Gradient sized to the border box, not the padding box inside the 1px border,
+     which would otherwise tile and leave a seam across the circle. */
+  background-origin: border-box;
   box-shadow:
     0 0 10px var(--accent-glow),
     0 0 20px var(--accent-glow-soft);
@@ -195,6 +198,7 @@ button {
   color: #061018;
   border-color: transparent;
   background: linear-gradient(135deg, var(--primary-hover), var(--secondary));
+  background-origin: border-box;
 }
 
 .btn-primary {
@@ -761,6 +765,11 @@ button {
      not a 40px button. */
   border-color: transparent;
   background: linear-gradient(135deg, var(--primary), var(--secondary));
+  /* Without this the gradient is sized to the padding box — 16px inside the 2px
+     border — and then tiled out to fill the border box, leaving a visible square
+     seam in the middle of the circle. Sizing it to the border box fills the pip
+     in one piece. */
+  background-origin: border-box;
   box-shadow:
     0 0 6px var(--accent-glow),
     0 0 13px var(--accent-glow-soft);
@@ -786,6 +795,7 @@ button {
      shouldn't mark themselves differently. */
   border-color: transparent;
   background: linear-gradient(135deg, var(--primary), var(--secondary));
+  background-origin: border-box; /* same tiling seam as the radio, see above */
   box-shadow:
     0 0 6px var(--accent-glow),
     0 0 13px var(--accent-glow-soft);
