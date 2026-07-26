@@ -23,6 +23,15 @@ const SORTS = [
 
 const DEFAULT_SORT = SORTS[0].key
 
+// The same-field option pointing the other way, or null when there isn't one —
+// which is how the direction toggle knows to disable itself.
+export function flipOf(key) {
+  const current = SORTS.find((s) => s.key === key)
+  if (!current || !current.dir) return null
+  const want = current.dir === 'asc' ? 'desc' : 'asc'
+  return SORTS.find((s) => s.field === current.field && s.dir === want)?.key || null
+}
+
 // Matches connectivityLabel() output so filtering is a plain string compare.
 const CONNECTIVITY_OPTIONS = ['Wireless', 'Wired', 'Wired + Wireless']
 
@@ -60,6 +69,7 @@ function SortControl({ value, onChange }) {
   const listRef = useRef(null)
 
   const current = SORTS.find((s) => s.key === value) || SORTS[0]
+  const flipKey = flipOf(current.key)
 
   const close = ({ refocus = true } = {}) => {
     setOpen(false)
@@ -128,6 +138,28 @@ function SortControl({ value, onChange }) {
 
   return (
     <div className={'cat-select' + (open ? ' is-open' : '')} ref={wrapRef}>
+      {/* Its own button, not part of the trigger: clicking it flips the
+          direction instead of opening the menu. Buttons can't nest, so the two
+          zones are siblings with a hairline between them. */}
+      <button
+        type="button"
+        className="cat-select__dir"
+        onClick={() => flipKey && onChange(flipKey)}
+        disabled={!flipKey}
+        aria-label={
+          flipKey
+            ? `Sorted ${current.dir === 'asc' ? 'ascending' : 'descending'} — switch to ${
+                current.dir === 'asc' ? 'descending' : 'ascending'
+              }`
+            : `${current.label} has no sort direction`
+        }
+        title={flipKey ? (current.dir === 'asc' ? 'Ascending' : 'Descending') : 'No direction'}
+      >
+        <DirIcon size={15} />
+      </button>
+
+      <span className="cat-select__divider" aria-hidden="true" />
+
       <button
         ref={triggerRef}
         type="button"
@@ -142,10 +174,6 @@ function SortControl({ value, onChange }) {
         aria-haspopup="listbox"
         aria-expanded={open}
       >
-        {/* Reflects which way the current sort points. #5 makes this a control. */}
-        <span className="cat-select__dir" aria-hidden="true">
-          <DirIcon size={15} />
-        </span>
         <span className="cat-select__value">{current.label}</span>
         <span className="cat-select__chev" aria-hidden="true">
           <ChevronDown size={14} />

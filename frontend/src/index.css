@@ -1677,23 +1677,54 @@ button {
   color: var(--text-primary);
 }
 
-/* Shows which way the current sort points. */
+/* Left zone: flips the sort direction. Its own hit area, marked off by the
+   hairline rather than by a label. */
 .cat-select__dir {
   display: inline-flex;
   align-items: center;
   justify-content: center;
   flex: none;
+  padding: 8px 10px 8px 13px;
+  border: none;
+  border-radius: 999px 0 0 999px;
+  background: none;
+  color: inherit;
+  transition: color 0.15s ease, background 0.15s ease;
 }
 
-/* The trigger fills the pill, so a click anywhere on the control opens the menu. */
+.cat-select__dir:hover:not(:disabled) {
+  color: var(--primary);
+  background: var(--surface-hover);
+}
+
+/* Featured and Top rated have no inverse to flip to. Dimmed and inert rather
+   than removed, so the control keeps its shape as you move between fields. */
+.cat-select__dir:disabled {
+  opacity: 0.38;
+  cursor: default;
+}
+
+.cat-select.is-open .cat-select__dir {
+  border-bottom-left-radius: 0;
+}
+
+.cat-select__divider {
+  align-self: center;
+  flex: none;
+  width: 1px;
+  height: 16px;
+  background: var(--border);
+}
+
+/* Right zone: opens the menu, and takes the rest of the pill. */
 .cat-select__trigger {
   display: inline-flex;
   align-items: center;
   gap: 8px;
-  width: 100%;
-  padding: 8px 13px;
+  flex: 1;
+  padding: 8px 13px 8px 10px;
   border: none;
-  border-radius: inherit;
+  border-radius: 0 999px 999px 0;
   background: none;
   color: inherit;
   font: inherit;
@@ -1703,6 +1734,10 @@ button {
 
 .cat-select__trigger:hover {
   background: var(--surface-hover);
+}
+
+.cat-select.is-open .cat-select__trigger {
+  border-bottom-right-radius: 0;
 }
 
 /* Reserve room for the longest label so the toolbar doesn't jump when the
@@ -1939,6 +1974,7 @@ button {
 }
 
 .cat-btn:focus-visible,
+.cat-select__dir:focus-visible,
 .cat-select__trigger:focus-visible,
 .filter-chip:focus-visible,
 .filter-clear:focus-visible {
