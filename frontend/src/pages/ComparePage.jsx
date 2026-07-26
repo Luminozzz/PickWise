@@ -137,7 +137,7 @@ export default function ComparePage({ productIds, answers, onNavigate }) {
 
   return (
     <>
-      <Navbar onNavigate={onNavigate} />
+      <Navbar onNavigate={onNavigate} view="compare" />
       <main className="cmp">
         <header className="cmp__head">
           <span className="quiz__section">Side By Side</span>

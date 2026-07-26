@@ -4,7 +4,7 @@ import Recommendations from '../questionnaire/Recommendations.jsx'
 export default function RecommendationsPage({ answers, onNavigate }) {
   return (
     <>
-      <Navbar onNavigate={onNavigate} />
+      <Navbar onNavigate={onNavigate} view="recommendations" />
       <Recommendations answers={answers} onNavigate={onNavigate} />
     </>
   )

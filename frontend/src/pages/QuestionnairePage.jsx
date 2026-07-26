@@ -4,7 +4,7 @@ import Questionnaire from '../questionnaire/Questionnaire.jsx'
 export default function QuestionnairePage({ onNavigate }) {
   return (
     <>
-      <Navbar onNavigate={onNavigate} />
+      <Navbar onNavigate={onNavigate} view="questionnaire" />
       <Questionnaire onNavigate={onNavigate} />
     </>
   )

@@ -165,16 +165,32 @@ button {
   transform: translateY(1px);
 }
 
-.navbar__icon-btn--profile {
+/* The page you're on. This lit treatment used to sit permanently on the profile
+   icon, where it looked like an active state but meant nothing; it now marks the
+   current page instead.
+
+   Same "horizon ring" the quiz uses for a selected radio — comet gradient in the
+   middle, the navbar's own accent forming a warm border — so a selected circular
+   control looks the same wherever it appears, and the indicator echoes the accent
+   line running under the bar. The double background paints a gradient border with
+   no compositing seam. */
+.navbar__icon-btn.is-current {
   color: #061018;
-  background: linear-gradient(135deg, var(--primary), var(--secondary));
   border-color: transparent;
+  border-width: 2px;
+  background:
+    linear-gradient(135deg, var(--primary), var(--secondary)) padding-box,
+    linear-gradient(140deg, var(--accent), var(--accent-soft)) border-box;
+  box-shadow: 0 0 11px -2px var(--accent-soft);
 }
 
-.navbar__icon-btn--profile:hover {
+/* Already where this one leads, so it doesn't offer to take you there. */
+.navbar__icon-btn.is-current:hover {
   color: #061018;
-  background: linear-gradient(135deg, var(--primary-hover), var(--secondary));
   border-color: transparent;
+  background:
+    linear-gradient(135deg, var(--primary-hover), var(--secondary)) padding-box,
+    linear-gradient(140deg, var(--accent), var(--accent-soft)) border-box;
 }
 
 .btn-primary {
