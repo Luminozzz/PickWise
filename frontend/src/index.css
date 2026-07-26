@@ -762,13 +762,18 @@ button {
   /* Comet gradient fills the pip and the accent (peach -> pink) sits behind it as
      a faint backlight, not around it as a ring — the same treatment the current
      navbar icon uses. Tighter radii than the navbar's because this is a 20px pip,
-     not a 40px button. */
-  border-color: transparent;
+     not a 40px button.
+
+     The ring is kept at the same 2px the unselected pip uses, so only its colour
+     changes between states and the pip never changes shape. --secondary-dark is
+     the shade of the gradient's own violet endpoint: darker than both ends of the
+     fill, so it reads evenly the whole way round. A ring in --primary or
+     --secondary itself would disappear into the fill at whichever corner the
+     gradient matches it. */
+  border-color: var(--secondary-dark);
   background: linear-gradient(135deg, var(--primary), var(--secondary));
-  /* Without this the gradient is sized to the padding box — 16px inside the 2px
-     border — and then tiled out to fill the border box, leaving a visible square
-     seam in the middle of the circle. Sizing it to the border box fills the pip
-     in one piece. */
+  /* Sized to the border box rather than the padding box inside the border, which
+     would otherwise tile and leave a square seam across the circle. */
   background-origin: border-box;
   box-shadow:
     0 0 6px var(--accent-glow),
@@ -792,8 +797,9 @@ button {
 
 .quiz__option.is-selected .quiz__check {
   /* Same backlight as the radio (see above) — multiselect and single-select
-     shouldn't mark themselves differently. */
-  border-color: transparent;
+     shouldn't mark themselves differently. Its unselected border is 1px, so the
+     ring stays 1px here — matching its own resting state rather than the radio's. */
+  border-color: var(--secondary-dark);
   background: linear-gradient(135deg, var(--primary), var(--secondary));
   background-origin: border-box; /* same tiling seam as the radio, see above */
   box-shadow:
