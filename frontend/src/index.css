@@ -148,18 +148,64 @@ button {
   color: var(--primary);
 }
 
+/* A 40px circle at rest that grows into a pill on hover to reveal its page name.
+   .navbar__nav is the last child of a space-between .navbar, so it's anchored to
+   the right: widening any button widens the nav leftward, which both expands the
+   button towards the left and pushes its earlier siblings along. No absolute
+   positioning needed — the existing layout already does it.
+
+   999px rather than 50%: a percentage radius on a non-square box draws an ellipse,
+   so the pill would go oval as it widened. 999px clamps to half the height, which
+   is a true circle at 40x40 and a proper pill once expanded. */
 .navbar__icon-btn {
-  display: flex;
+  display: inline-flex;
   align-items: center;
-  justify-content: center;
-  width: 40px;
+  flex: none;
   height: 40px;
-  border-radius: 50%;
+  /* 20px icon + 9px each side + the 1px border each side = exactly 40px, matching
+     the height so it's a true circle. The width is content-driven now rather than
+     fixed, which is what lets it grow. */
+  padding: 0 9px;
+  border-radius: 999px;
   background: var(--surface-raised);
   border: 1px solid var(--border);
   color: var(--text-secondary);
   transition: color 0.15s ease, border-color 0.15s ease,
     background 0.15s ease, transform 0.1s ease;
+}
+
+/* Collapsed to nothing by max-width rather than display:none, so the text is
+   still the button's accessible name while hidden. */
+.navbar__label {
+  max-width: 0;
+  overflow: hidden;
+  white-space: nowrap;
+  font-size: 13.5px;
+  font-weight: 600;
+  /* Not `1`: that makes the line box exactly the font size, so descenders — the
+     tail of the "g" in Catalogue — fall outside it and get cut off by the
+     overflow that's collapsing the label. The button's height is fixed and the
+     label is centred in it, so the roomier line box costs no layout. */
+  line-height: 1.45;
+  transition: max-width 0.3s cubic-bezier(0.22, 1, 0.36, 1),
+    margin 0.3s cubic-bezier(0.22, 1, 0.36, 1);
+}
+
+/* :focus-visible as well as :hover — a keyboard user should get the name too. */
+.navbar__icon-btn:hover .navbar__label,
+.navbar__icon-btn:focus-visible .navbar__label {
+  /* A cap, not a width: the span still sizes to its own text, so the three
+     different label lengths each settle at their natural width. */
+  max-width: 140px;
+  /* Gap from the icon on the left, plus a little air before the pill's right
+     edge so the text isn't pressed against the 9px padding. */
+  margin: 0 3px 0 8px;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .navbar__label {
+    transition: none;
+  }
 }
 
 .navbar__icon-btn:hover {
