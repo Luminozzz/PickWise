@@ -2173,6 +2173,40 @@ button {
   gap: 6px;
 }
 
+/* Secondary action beside Visit store. Outlined so it reads as available without
+   competing with the primary CTA, and it borrows btn-primary's padding, radius
+   and type size so the two sit level in the row rather than looking like
+   different species of button. */
+.pdp__compare {
+  /* 1px less than btn-primary's 10px/18px on each side: that button has no
+     border, so trimming the padding by the border width leaves both the same
+     size and keeps the row level. */
+  padding: 9px 17px;
+  border-radius: var(--radius-sm);
+  background: none;
+  border: 1px solid var(--border-strong);
+  color: var(--text-primary);
+  font-size: 15px;
+  font-weight: 600;
+  transition: color 0.15s ease, border-color 0.15s ease, background 0.15s ease,
+    transform 0.1s ease;
+}
+
+.pdp__compare:hover {
+  color: var(--primary);
+  border-color: var(--primary);
+  background: var(--surface-hover);
+}
+
+.pdp__compare:active {
+  transform: translateY(1px);
+}
+
+.pdp__compare:focus-visible {
+  outline: none;
+  box-shadow: 0 0 0 2px var(--bg), 0 0 0 4px var(--primary);
+}
+
 /* Spec detail list — ordered by importance, fit arrow on the left */
 .pdp__specs {
   margin-top: 48px;

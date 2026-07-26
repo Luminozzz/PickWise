@@ -190,6 +190,17 @@ export default function ProductPage({ productId, answers, onNavigate }) {
                   Visit store <ArrowRight size={14} />
                 </a>
               )}
+              {/* Opens the comparison with this mouse already in the first
+                  column; the picker there covers choosing what to set it
+                  against. Outlined rather than solid so it doesn't compete with
+                  Visit store, which is the page's primary action. */}
+              <button
+                className="pdp__compare"
+                type="button"
+                onClick={() => onNavigate('compare', [data.id])}
+              >
+                Compare
+              </button>
               {!data.has_answers && (
                 <button
                   className="quiz__restart"
