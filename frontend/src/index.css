@@ -1645,10 +1645,10 @@ button {
   background: linear-gradient(135deg, var(--primary), var(--secondary));
 }
 
-/* Sort: a direction toggle and a menu trigger sharing one pill. Open, the menu
-   is the same pill continued downwards — same width, same border, same surface,
-   with the corners squared off where the two meet so the seam reads as a fold
-   rather than a floating panel landing on top of the page. */
+/* Sort: a direction toggle and a menu trigger sharing one pill. The pill keeps
+   its full lozenge curve whether open or shut — it never deforms to meet the
+   menu. The menu is its own panel instead, tied to the button by sharing its
+   exact width, border and surface rather than by joining onto it. */
 .cat-select {
   position: relative;
   display: inline-flex;
@@ -1659,7 +1659,7 @@ button {
   color: var(--text-secondary);
   font-size: 13px;
   font-weight: 600;
-  transition: color 0.15s ease, border-color 0.15s ease, border-radius 0.18s ease;
+  transition: color 0.15s ease, border-color 0.15s ease;
 }
 
 .cat-select:hover {
@@ -1667,12 +1667,9 @@ button {
   border-color: var(--border-strong);
 }
 
-/* Open: flatten the bottom so the menu continues the same shape, and keep the
-   brighter border so pill and menu read as one object. */
+/* Open: brighten the border so the control still reads as active. Deliberately
+   no radius change — the button's silhouette stays constant. */
 .cat-select.is-open {
-  border-bottom-left-radius: 0;
-  border-bottom-right-radius: 0;
-  border-bottom-color: transparent;
   border-color: var(--border-strong);
   color: var(--text-primary);
 }
@@ -1704,10 +1701,6 @@ button {
   cursor: default;
 }
 
-.cat-select.is-open .cat-select__dir {
-  border-bottom-left-radius: 0;
-}
-
 .cat-select__divider {
   align-self: center;
   flex: none;
@@ -1736,15 +1729,25 @@ button {
   background: var(--surface-hover);
 }
 
-.cat-select.is-open .cat-select__trigger {
-  border-bottom-right-radius: 0;
+/* All labels share one grid cell, so the cell is sized to the longest of them
+   and the pill's width is fixed regardless of what's selected. A min-width here
+   would need hand-tuning every time a label changed — and would silently be
+   outgrown, which is what happened with the two "Price: ..." labels. */
+.cat-select__value {
+  display: grid;
+  text-align: left;
 }
 
-/* Reserve room for the longest label so the toolbar doesn't jump when the
-   selection changes from "Featured" to "Price: High to Low". */
-.cat-select__value {
-  min-width: 104px;
-  text-align: left;
+.cat-select__value > .cat-select__label {
+  grid-area: 1 / 1;
+  white-space: nowrap;
+  /* Laid out (so it still contributes width) but not painted, and excluded from
+     the accessibility tree. */
+  visibility: hidden;
+}
+
+.cat-select__value > .cat-select__label.is-current {
+  visibility: visible;
 }
 
 /* Scoped to the chevron: `.cat-select__trigger svg` would spin the direction
@@ -1760,35 +1763,39 @@ button {
   transform: rotate(180deg);
 }
 
-/* The menu: the pill's own border and surface carried downwards. Overlapping by
-   1px swallows the doubled border where they join, so there's a single hairline
-   across the seam instead of two. */
+/* A panel of its own, carrying the pill's border and surface. The ±1px insets
+   line its border box up with the button's exactly, so the two edges agree even
+   though the shapes don't touch — that alignment is what ties them together now
+   that the pill keeps its curve. The 6px offset is the same one the filter
+   panel drops by. */
 .cat-select__menu {
   position: absolute;
-  top: 100%;
+  /* +7px, not +6: `100%` is the padding box, which stops 1px short of the
+     button's outer edge, so this renders as a true 6px gap. */
+  top: calc(100% + 7px);
   left: -1px;
   right: -1px;
   z-index: 20;
-  margin: -1px 0 0;
+  margin: 0;
   padding: 5px;
   list-style: none;
   max-height: 320px;
   overflow-y: auto;
   background: var(--surface-raised);
   border: 1px solid var(--border-strong);
-  border-top: none;
-  border-radius: 0 0 var(--radius) var(--radius);
+  border-radius: var(--radius);
   /* Enough to lift it off the cards behind, no more. */
   box-shadow: 0 10px 22px rgba(3, 4, 14, 0.45);
   transform-origin: top center;
   animation: sortMenuOpen 0.19s cubic-bezier(0.22, 1, 0.36, 1) both;
 }
 
-/* Unfolds from the seam rather than fading in place. */
+/* Grows downward out of the button's position, so it still reads as coming from
+   the control rather than fading in somewhere nearby. */
 @keyframes sortMenuOpen {
   from {
     opacity: 0;
-    transform: scaleY(0.9) translateY(-4px);
+    transform: scaleY(0.9) translateY(-5px);
   }
   to {
     opacity: 1;
