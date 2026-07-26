@@ -201,15 +201,6 @@ export default function ProductPage({ productId, answers, onNavigate }) {
               >
                 Compare
               </button>
-              {!data.has_answers && (
-                <button
-                  className="quiz__restart"
-                  type="button"
-                  onClick={() => onNavigate('questionnaire')}
-                >
-                  Take the quiz to personalise →
-                </button>
-              )}
             </div>
           </div>
         </div>
