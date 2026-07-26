@@ -52,7 +52,7 @@ export default function ProductPage({ productId, answers, onNavigate }) {
   if (error) {
     return (
       <>
-        <Navbar onNavigate={onNavigate} />
+        <Navbar onNavigate={onNavigate} view="product" />
         <main className="pdp">
           <div className="recs__state">{error}</div>
           <button className="quiz__restart" type="button" onClick={() => onNavigate('landing')}>
@@ -66,7 +66,7 @@ export default function ProductPage({ productId, answers, onNavigate }) {
   if (!data) {
     return (
       <>
-        <Navbar onNavigate={onNavigate} />
+        <Navbar onNavigate={onNavigate} view="product" />
         <main className="pdp">
           <div className="recs__state">
             <span className="recs__spinner" aria-hidden="true" />
@@ -88,7 +88,7 @@ export default function ProductPage({ productId, answers, onNavigate }) {
 
   return (
     <>
-      <Navbar onNavigate={onNavigate} />
+      <Navbar onNavigate={onNavigate} view="product" />
       <main className="pdp">
         <button className="pdp__back" type="button" onClick={() => window.history.back()}>
           ← Back

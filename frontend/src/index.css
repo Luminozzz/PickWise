@@ -24,6 +24,13 @@
   --accent: #F7B58A;
   --accent-soft: #E6A0C7;
 
+  /* Derived from the two above, not new brand colours. Kept faint on purpose: an
+     opaque accent in a box-shadow is near-solid at the element's edge and reads
+     as a rim, which is the opposite of a glow. These are for a backlight you
+     notice without it announcing itself. */
+  --accent-glow: color-mix(in srgb, var(--accent) 38%, transparent);
+  --accent-glow-soft: color-mix(in srgb, var(--accent-soft) 19%, transparent);
+
   /* Comet tail / horizon */
   --comet-magenta: #C7509E;
   --horizon: #EE9A5E;
@@ -165,16 +172,33 @@ button {
   transform: translateY(1px);
 }
 
-.navbar__icon-btn--profile {
+/* The page you're on. This lit treatment used to sit permanently on the profile
+   icon, where it looked like an active state but meant nothing; it now marks the
+   current page instead.
+
+   The comet gradient fills the button and the accent sits behind it as a
+   backlight rather than around it as a ring. Same technique as the navbar's own
+   illuminated line directly below: the accent at full strength, spread by blur
+   instead of thinned with alpha, so the glow reads as light coming off the
+   button rather than as another border. */
+.navbar__icon-btn.is-current {
   color: #061018;
-  background: linear-gradient(135deg, var(--primary), var(--secondary));
   border-color: transparent;
+  background: linear-gradient(135deg, var(--primary), var(--secondary));
+  /* Gradient sized to the border box, not the padding box inside the 1px border,
+     which would otherwise tile and leave a seam across the circle. */
+  background-origin: border-box;
+  box-shadow:
+    0 0 10px var(--accent-glow),
+    0 0 20px var(--accent-glow-soft);
 }
 
-.navbar__icon-btn--profile:hover {
+/* Already where this one leads, so it doesn't offer to take you there. */
+.navbar__icon-btn.is-current:hover {
   color: #061018;
-  background: linear-gradient(135deg, var(--primary-hover), var(--secondary));
   border-color: transparent;
+  background: linear-gradient(135deg, var(--primary-hover), var(--secondary));
+  background-origin: border-box;
 }
 
 .btn-primary {
@@ -735,14 +759,25 @@ button {
 }
 
 .quiz__option.is-selected .quiz__radio {
-  /* Horizon ring: comet gradient fills the centre, the accent (peach -> pink)
-     forms a warm illuminated border — echoing the navbar's accent line. The
-     double background paints a crisp gradient border with no compositing seam. */
-  border-color: transparent;
-  background:
-    linear-gradient(135deg, var(--primary), var(--secondary)) padding-box,
-    linear-gradient(140deg, var(--accent), var(--accent-soft)) border-box;
-  box-shadow: 0 0 9px -2px var(--accent-soft);
+  /* Comet gradient fills the pip and the accent (peach -> pink) sits behind it as
+     a faint backlight, not around it as a ring — the same treatment the current
+     navbar icon uses. Tighter radii than the navbar's because this is a 20px pip,
+     not a 40px button.
+
+     The ring is kept at the same 2px the unselected pip uses, so only its colour
+     changes between states and the pip never changes shape. --secondary-dark is
+     the shade of the gradient's own violet endpoint: darker than both ends of the
+     fill, so it reads evenly the whole way round. A ring in --primary or
+     --secondary itself would disappear into the fill at whichever corner the
+     gradient matches it. */
+  border-color: var(--secondary-dark);
+  background: linear-gradient(135deg, var(--primary), var(--secondary));
+  /* Sized to the border box rather than the padding box inside the border, which
+     would otherwise tile and leave a square seam across the circle. */
+  background-origin: border-box;
+  box-shadow:
+    0 0 6px var(--accent-glow),
+    0 0 13px var(--accent-glow-soft);
 }
 
 .quiz__option-label {
@@ -761,12 +796,15 @@ button {
 }
 
 .quiz__option.is-selected .quiz__check {
-  /* Same horizon ring as the radio (see above). */
-  border-color: transparent;
-  background:
-    linear-gradient(135deg, var(--primary), var(--secondary)) padding-box,
-    linear-gradient(140deg, var(--accent), var(--accent-soft)) border-box;
-  box-shadow: 0 0 9px -2px var(--accent-soft);
+  /* Same backlight as the radio (see above) — multiselect and single-select
+     shouldn't mark themselves differently. Its unselected border is 1px, so the
+     ring stays 1px here — matching its own resting state rather than the radio's. */
+  border-color: var(--secondary-dark);
+  background: linear-gradient(135deg, var(--primary), var(--secondary));
+  background-origin: border-box; /* same tiling seam as the radio, see above */
+  box-shadow:
+    0 0 6px var(--accent-glow),
+    0 0 13px var(--accent-glow-soft);
 }
 
 /* Continue / submit button (slider, range, multiselect) */

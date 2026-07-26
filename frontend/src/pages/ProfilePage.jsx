@@ -114,7 +114,7 @@ export default function ProfilePage({ answers, onNavigate, onSaveProfile }) {
 
   return (
     <>
-      <Navbar onNavigate={onNavigate} />
+      <Navbar onNavigate={onNavigate} view="profile" />
       <main className="profile">
         <header className="profile__head">
           <span className="quiz__section">Your Preferences</span>

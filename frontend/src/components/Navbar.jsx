@@ -2,7 +2,28 @@ import { User, Grid, Sparkle } from './icons.jsx'
 
 const PROFILE_KEY = 'pickwise_profile_id'
 
-export default function Navbar({ onNavigate }) {
+// Which icon owns which view. The questionnaire is the first-run form of the
+// profile — App redirects between the two depending on whether one is saved — so
+// they light the same icon. Product and compare pages deliberately map to
+// nothing: they aren't any of these three destinations, and guessing a section
+// for them would light an icon that doesn't take you back where you came from.
+const ICON_FOR_VIEW = {
+  landing: 'catalogue',
+  recommendations: 'recommendations',
+  profile: 'profile',
+  questionnaire: 'profile',
+}
+
+export default function Navbar({ onNavigate, view }) {
+  const current = ICON_FOR_VIEW[view] || null
+
+  // Marks the icon for the page being viewed. aria-current is what actually
+  // conveys this to a screen reader — the gradient is only visual.
+  const mark = (key) => ({
+    className: 'navbar__icon-btn' + (current === key ? ' is-current' : ''),
+    'aria-current': current === key ? 'page' : undefined,
+  })
+
   const go = (view) => (e) => {
     if (onNavigate) {
       e.preventDefault()
@@ -31,7 +52,7 @@ export default function Navbar({ onNavigate }) {
       </a>
       <nav className="navbar__nav">
         <button
-          className="navbar__icon-btn"
+          {...mark('recommendations')}
           type="button"
           onClick={go('recommendations')}
           aria-label="Find my mouse with AI"
@@ -40,7 +61,7 @@ export default function Navbar({ onNavigate }) {
           <Sparkle />
         </button>
         <a
-          className="navbar__icon-btn"
+          {...mark('catalogue')}
           href="/catalogue"
           aria-label="Catalogue"
           title="Catalogue"
@@ -49,7 +70,7 @@ export default function Navbar({ onNavigate }) {
           <Grid />
         </a>
         <button
-          className="navbar__icon-btn navbar__icon-btn--profile"
+          {...mark('profile')}
           type="button"
           onClick={openProfile}
           aria-label="Profile"
