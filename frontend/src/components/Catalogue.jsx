@@ -158,15 +158,22 @@ export default function Catalogue({ items, loading, error, answers, onNavigate }
             <Sliders size={16} /> Filter
             {activeFilters > 0 && <span className="cat-btn__count">{activeFilters}</span>}
           </button>
-          <label className="cat-select">
+          {/* Not a <label>: clicking a label focuses a select but doesn't open its
+              menu, which is why the icon and the padding used to look active and
+              do nothing. The select itself is stretched over the whole pill (see
+              index.css) so a click anywhere lands on the real control. */}
+          <div className="cat-select">
             <Sort size={16} />
+            <span className="cat-select__value">
+              {(SORTS.find((s) => s.key === sort) || SORTS[0]).label}
+            </span>
+            <ChevronDown size={14} />
             <select value={sort} onChange={(e) => setSort(e.target.value)} aria-label="Sort">
               {SORTS.map((s) => (
                 <option key={s.key} value={s.key}>{s.label}</option>
               ))}
             </select>
-            <ChevronDown size={14} />
-          </label>
+          </div>
           <div className="recs__toggle" role="group" aria-label="View">
             <button
               type="button"
