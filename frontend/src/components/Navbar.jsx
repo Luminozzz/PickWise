@@ -51,32 +51,29 @@ export default function Navbar({ onNavigate, view }) {
         PickWise
       </a>
       <nav className="navbar__nav">
+        {/* Icon first, label after it, so the expanded pill reads icon-then-text.
+            The button's right edge is pinned by the nav being right-anchored, so
+            the growth comes out of the left side and the icon travels with it.
+            No `title` on these any more: it would fire a native tooltip on top of
+            the label that's already appearing. The label text is the accessible
+            name — it stays in the accessibility tree while collapsed, because
+            it's hidden by overflow rather than by `display: none`. */}
         <button
           {...mark('recommendations')}
           type="button"
           onClick={go('recommendations')}
-          aria-label="Find my mouse with AI"
-          title="AI recommendations"
+          aria-label="For You — personalised recommendations"
         >
           <Sparkle />
+          <span className="navbar__label">For You</span>
         </button>
-        <a
-          {...mark('catalogue')}
-          href="/catalogue"
-          aria-label="Catalogue"
-          title="Catalogue"
-          onClick={go('landing')}
-        >
+        <a {...mark('catalogue')} href="/catalogue" onClick={go('landing')}>
           <Grid />
+          <span className="navbar__label">Catalogue</span>
         </a>
-        <button
-          {...mark('profile')}
-          type="button"
-          onClick={openProfile}
-          aria-label="Profile"
-          title="Profile"
-        >
+        <button {...mark('profile')} type="button" onClick={openProfile}>
           <User />
+          <span className="navbar__label">Profile</span>
         </button>
       </nav>
     </header>
