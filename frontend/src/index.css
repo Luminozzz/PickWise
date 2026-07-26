@@ -1966,6 +1966,54 @@ button {
   margin-bottom: 0;
 }
 
+/* The numbers sit to the right of the Compare button, so their column width
+   decides where that button lands. Left to size itself it swings ~24px between
+   "S$149" and "S$209.90", leaving a ragged column of buttons down the list. A
+   floor here keeps them aligned; a price longer than this only nudges its own
+   row rather than breaking anything. */
+.catalogue__list .rec__meta {
+  min-width: 88px;
+}
+
+@media (max-width: 560px) {
+  .catalogue__list .rec__meta {
+    min-width: 0;
+  }
+}
+
+/* Compare action on a list row. Outlined rather than a bare text link: the whole
+   row is already clickable, so this has to read as a target of its own. */
+.rec__compare {
+  flex: none;
+  padding: 7px 14px;
+  border-radius: 999px;
+  background: none;
+  border: 1px solid var(--border);
+  color: var(--text-secondary);
+  font-size: 12.5px;
+  font-weight: 600;
+  white-space: nowrap;
+  transition: color 0.15s ease, border-color 0.15s ease, background 0.15s ease;
+}
+
+.rec__compare:hover {
+  color: var(--primary);
+  border-color: var(--primary);
+  background: var(--surface-hover);
+}
+
+.rec__compare:focus-visible {
+  outline: none;
+  box-shadow: 0 0 0 2px var(--bg), 0 0 0 4px var(--primary);
+}
+
+@media (max-width: 560px) {
+  .rec__compare {
+    padding: 6px 10px;
+    font-size: 12px;
+  }
+}
+
 .catalogue__empty {
   padding: 56px 0;
   text-align: center;

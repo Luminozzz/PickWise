@@ -231,6 +231,11 @@ function CatalogueRow({ item, answers, onNavigate }) {
       onKeyDown={
         onNavigate
           ? (e) => {
+              // Only act on keys aimed at the row itself. Without this, Enter on
+              // the Compare button bubbles up here and preventDefault() swallows
+              // the button's own activation, sending the user to the product
+              // page instead of the comparison.
+              if (e.target !== e.currentTarget) return
               if (e.key === 'Enter' || e.key === ' ') {
                 e.preventDefault()
                 onNavigate('product', item.id)
@@ -259,16 +264,35 @@ function CatalogueRow({ item, answers, onNavigate }) {
           </div>
         )}
       </div>
+      {/* Card view has had a Compare action all along; the list view didn't.
+          stopPropagation so it doesn't also trigger the row's navigation. */}
+      {onNavigate && (
+        <button
+          className="rec__compare"
+          type="button"
+          aria-label={`Compare ${item.product_name}`}
+          onClick={(e) => {
+            e.stopPropagation()
+            onNavigate('compare', [item.id])
+          }}
+        >
+          Compare
+        </button>
+      )}
+      {/* Rating above, price below. The price is the largest number here and the
+          last thing a left-to-right scan reaches, so it anchors the corner and
+          the rating reads as the qualifier above it. Swapped in the DOM rather
+          than with `order`, so screen readers hear it in the order it's shown. */}
       <div className="rec__meta">
-        {price ? (
-          <span className="rec__price">{price}</span>
-        ) : (
-          <span className="rec__price rec__price--na">—</span>
-        )}
         {item.rating?.stars != null && (
           <span className="card__rating" title={`${item.rating.stars} out of 5`}>
             ★ {Number(item.rating.stars).toFixed(1)}
           </span>
+        )}
+        {price ? (
+          <span className="rec__price">{price}</span>
+        ) : (
+          <span className="rec__price rec__price--na">—</span>
         )}
       </div>
     </li>
