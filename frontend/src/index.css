@@ -24,6 +24,13 @@
   --accent: #F7B58A;
   --accent-soft: #E6A0C7;
 
+  /* Derived from the two above, not new brand colours. Kept deliberately faint:
+     an opaque accent in a box-shadow is near-solid at the element's edge and
+     reads as a rim, which is the opposite of a glow. These are for a backlight
+     you notice without it announcing itself. */
+  --accent-glow: color-mix(in srgb, var(--accent) 30%, transparent);
+  --accent-glow-soft: color-mix(in srgb, var(--accent-soft) 14%, transparent);
+
   /* Comet tail / horizon */
   --comet-magenta: #C7509E;
   --horizon: #EE9A5E;
@@ -169,28 +176,25 @@ button {
    icon, where it looked like an active state but meant nothing; it now marks the
    current page instead.
 
-   Same "horizon ring" the quiz uses for a selected radio — comet gradient in the
-   middle, the navbar's own accent forming a warm border — so a selected circular
-   control looks the same wherever it appears, and the indicator echoes the accent
-   line running under the bar. The double background paints a gradient border with
-   no compositing seam. */
+   The comet gradient fills the button and the accent sits behind it as a
+   backlight rather than around it as a ring. Same technique as the navbar's own
+   illuminated line directly below: the accent at full strength, spread by blur
+   instead of thinned with alpha, so the glow reads as light coming off the
+   button rather than as another border. */
 .navbar__icon-btn.is-current {
   color: #061018;
   border-color: transparent;
-  border-width: 2px;
-  background:
-    linear-gradient(135deg, var(--primary), var(--secondary)) padding-box,
-    linear-gradient(140deg, var(--accent), var(--accent-soft)) border-box;
-  box-shadow: 0 0 11px -2px var(--accent-soft);
+  background: linear-gradient(135deg, var(--primary), var(--secondary));
+  box-shadow:
+    0 0 10px var(--accent-glow),
+    0 0 20px var(--accent-glow-soft);
 }
 
 /* Already where this one leads, so it doesn't offer to take you there. */
 .navbar__icon-btn.is-current:hover {
   color: #061018;
   border-color: transparent;
-  background:
-    linear-gradient(135deg, var(--primary-hover), var(--secondary)) padding-box,
-    linear-gradient(140deg, var(--accent), var(--accent-soft)) border-box;
+  background: linear-gradient(135deg, var(--primary-hover), var(--secondary));
 }
 
 .btn-primary {
@@ -751,14 +755,15 @@ button {
 }
 
 .quiz__option.is-selected .quiz__radio {
-  /* Horizon ring: comet gradient fills the centre, the accent (peach -> pink)
-     forms a warm illuminated border — echoing the navbar's accent line. The
-     double background paints a crisp gradient border with no compositing seam. */
+  /* Comet gradient fills the pip and the accent (peach -> pink) sits behind it as
+     a faint backlight, not around it as a ring — the same treatment the current
+     navbar icon uses. Tighter radii than the navbar's because this is a 20px pip,
+     not a 40px button. */
   border-color: transparent;
-  background:
-    linear-gradient(135deg, var(--primary), var(--secondary)) padding-box,
-    linear-gradient(140deg, var(--accent), var(--accent-soft)) border-box;
-  box-shadow: 0 0 9px -2px var(--accent-soft);
+  background: linear-gradient(135deg, var(--primary), var(--secondary));
+  box-shadow:
+    0 0 6px var(--accent-glow),
+    0 0 13px var(--accent-glow-soft);
 }
 
 .quiz__option-label {
@@ -777,12 +782,13 @@ button {
 }
 
 .quiz__option.is-selected .quiz__check {
-  /* Same horizon ring as the radio (see above). */
+  /* Same backlight as the radio (see above) — multiselect and single-select
+     shouldn't mark themselves differently. */
   border-color: transparent;
-  background:
-    linear-gradient(135deg, var(--primary), var(--secondary)) padding-box,
-    linear-gradient(140deg, var(--accent), var(--accent-soft)) border-box;
-  box-shadow: 0 0 9px -2px var(--accent-soft);
+  background: linear-gradient(135deg, var(--primary), var(--secondary));
+  box-shadow:
+    0 0 6px var(--accent-glow),
+    0 0 13px var(--accent-glow-soft);
 }
 
 /* Continue / submit button (slider, range, multiselect) */
