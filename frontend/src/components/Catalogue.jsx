@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useRef, useState } from 'react'
+import { useEffect, useLayoutEffect, useMemo, useRef, useState } from 'react'
 import ProductCard from './ProductCard.jsx'
 import ProductCardSkeleton from './ProductCardSkeleton.jsx'
 import { Grid, Rows, Sliders, Sort, ChevronDown, ArrowUp, ArrowDown } from './icons.jsx'
@@ -41,6 +41,50 @@ function loadView() {
   } catch {
     return 'card'
   }
+}
+
+// Re-sorting or filtering used to swap the results in on a single frame, which
+// read as a flicker rather than a change. Now they lift into place as a short
+// diagonal wave, on the easing the quiz cards and filter panel already use.
+const ENTER_MS = 260
+const ENTER_EASE = 'cubic-bezier(0.22, 1, 0.36, 1)'
+const STAGGER_MS = 18
+// The wave resolves in about the same time whether 8 mice match or 104 — beyond
+// this many, everything remaining arrives together instead of trickling in for
+// seconds.
+const STAGGER_CAP = 11
+
+// Animates the children imperatively rather than via a CSS class, because a CSS
+// animation only replays if the element is remounted — and remounting means
+// tearing down ~100 <img> elements on every sort, which flickers.
+function useResultsTransition(ref, signature) {
+  useLayoutEffect(() => {
+    const el = ref.current
+    if (!el || typeof el.animate === 'undefined') return
+    const reduced = window.matchMedia?.('(prefers-reduced-motion: reduce)').matches
+
+    ;[...el.children].forEach((child, i) => {
+      if (typeof child.animate !== 'function') return
+      child.animate(
+        reduced
+          ? [{ opacity: 0 }, { opacity: 1 }]
+          : [
+              { opacity: 0, transform: 'translateY(10px) scale(0.985)' },
+              { opacity: 1, transform: 'none' },
+            ],
+        {
+          duration: reduced ? 120 : ENTER_MS,
+          delay: reduced ? 0 : Math.min(i, STAGGER_CAP) * STAGGER_MS,
+          easing: ENTER_EASE,
+          // Backwards only: the card is held at the start state through its
+          // delay, then released to the stylesheet once it finishes, so :hover
+          // and the card's own transform keep working afterwards.
+          fill: 'backwards',
+        },
+      )
+    })
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [signature])
 }
 
 const priceOf = (it) => (it.price && it.price.amount != null ? Number(it.price.amount) : null)
@@ -174,7 +218,20 @@ function SortControl({ value, onChange }) {
         aria-haspopup="listbox"
         aria-expanded={open}
       >
-        <span className="cat-select__value">{current.label}</span>
+        {/* Every label is rendered into the same grid cell and all but the
+            selected one is hidden. The cell is therefore always as wide as the
+            longest label, so the pill can't change width when the selection
+            changes — and it stays correct if the labels are ever edited. */}
+        <span className="cat-select__value">
+          {SORTS.map((s) => (
+            <span
+              key={s.key}
+              className={'cat-select__label' + (s.key === current.key ? ' is-current' : '')}
+            >
+              {s.label}
+            </span>
+          ))}
+        </span>
         <span className="cat-select__chev" aria-hidden="true">
           <ChevronDown size={14} />
         </span>
@@ -309,6 +366,14 @@ export default function Catalogue({ items, loading, error, answers, onNavigate }
     setter(arr.includes(val) ? arr.filter((x) => x !== val) : [...arr, val])
   const activeFilters = brands.length + conns.length
 
+  // Replay the entry whenever the result set or its order changes — including
+  // the first load, and switching between card and list.
+  const resultsRef = useRef(null)
+  useResultsTransition(
+    resultsRef,
+    `${view}|${sort}|${brands.join(',')}|${conns.join(',')}|${displayed.length}`,
+  )
+
   if (error) {
     return (
       <main className="catalogue">
@@ -417,13 +482,13 @@ export default function Catalogue({ items, loading, error, answers, onNavigate }
       ) : displayed.length === 0 ? (
         <p className="catalogue__empty">No mice match these filters.</p>
       ) : view === 'card' ? (
-        <div className="catalogue__grid">
+        <div className="catalogue__grid" ref={resultsRef}>
           {displayed.map((it) => (
             <ProductCard key={it.id} item={it} answers={answers} onNavigate={onNavigate} />
           ))}
         </div>
       ) : (
-        <ol className="catalogue__list">
+        <ol className="catalogue__list" ref={resultsRef}>
           {displayed.map((it) => (
             <CatalogueRow key={it.id} item={it} answers={answers} onNavigate={onNavigate} />
           ))}
