@@ -73,16 +73,18 @@ export function Sliders({ size = 20 }) {
   )
 }
 
-// Sort — opposing arrows.
+// Sort — tapering bars, the conventional "sort by amount" mark. Deliberately
+// carries no arrow: it marks the states with no direction to point in (Featured,
+// Top rated), and an arrow here would collide with ArrowUp / ArrowDown, which
+// are what ascending and descending mean in this control.
 export function Sort({ size = 20 }) {
   return (
     <svg width={size} height={size} viewBox="0 0 24 24" fill="none" aria-hidden="true">
       <path
-        d="M7 4v16M7 20l-3-3M7 4l3 3M17 20V4M17 4l-3 3M17 20l3-3"
+        d="M4 7h16M4 12h10M4 17h5"
         stroke="currentColor"
         strokeWidth="2"
         strokeLinecap="round"
-        strokeLinejoin="round"
       />
     </svg>
   )
