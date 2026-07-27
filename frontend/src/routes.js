@@ -67,6 +67,29 @@ export function categoryFromPath(path) {
   return category && !category.ready ? category.slug : null
 }
 
+// An empty object is not a set of answers. It is truthy, so a plain falsy check
+// lets it through, and a profile can exist with nothing filled in.
+export const hasRealAnswers = (answers) =>
+  !!answers && Object.keys(answers).length > 0
+
+// The views that only mean something once there are answers behind them: "For You"
+// ranks mice around them, and the profile page edits them. Shown with none, the
+// first ranks against nothing and reports 0 matched on every row, and the second is
+// a blank form — so the quiz stands in, because it is what the visitor needs to get
+// either one working.
+//
+// A saved profile counts even before its answers arrive: they are being fetched, and
+// redirecting mid-flight would throw a returning visitor into a quiz they already
+// finished.
+//
+// Returns the view to show instead, or null to show the one that was asked for.
+const NEEDS_ANSWERS = ['recommendations', 'profile']
+
+export function redirectForMissingAnswers(view, { hasAnswers, hasProfile }) {
+  if (hasAnswers || hasProfile) return null
+  return NEEDS_ANSWERS.includes(view) ? 'questionnaire' : null
+}
+
 // Where a category card points.
 export function pathForCategory(category) {
   if (!category) return PATHS.home

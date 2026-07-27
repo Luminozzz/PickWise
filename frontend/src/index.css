@@ -773,6 +773,9 @@ button {
      however far inside the edge it sits or the panel opens on top of the card and
      covers whatever is beside it. Default assumes the button is at the edge. */
   --qhelp-gap: 12px;
+  /* Trading a little width buys the beside placement at narrower widths, which is
+     worth it: dropping below covers the next option, opening beside covers nothing. */
+  --qhelp-w: 320px;
 }
 
 /* Inset 16px from the option's right edge, so clear that too. */
@@ -830,7 +833,7 @@ button {
   flex-direction: column;
   gap: 10px;
   width: max-content;
-  max-width: min(320px, calc(100vw - 48px));
+  max-width: min(var(--qhelp-w), calc(100vw - 48px));
   padding: 12px 14px;
   background: var(--surface-raised);
   border: 1px solid var(--border-strong);
@@ -857,9 +860,20 @@ button {
   }
 }
 
-/* Not enough room beside the card, so it drops below the button and hugs its right
-   edge, which keeps it inside the viewport at any width. */
-@media (max-width: 1380px) {
+/* Still room beside the card here, just not for the full width: measured at 1280,
+   the profile page leaves 352px to the right of the button and the panel has to fit
+   its 50px gap inside that. Narrowing it keeps the placement, which is the whole
+   point — beside covers nothing, below covers the next option. */
+@media (max-width: 1400px) {
+  .qhelp {
+    --qhelp-w: 288px;
+  }
+}
+
+/* Below this there is genuinely no room beside the card, so it drops under the
+   button and hugs its right edge, the only placement that stays on screen. Pages
+   with room to spare opt back out of this — see the product page below. */
+@media (max-width: 1180px) {
   .qhelp__panel {
     top: calc(100% + 9px);
     left: auto;
@@ -2621,31 +2635,42 @@ button {
   color: var(--text-secondary);
 }
 
-/* The panel opens into the empty middle of the row, between the label and the
-   value, so it explains the spec without covering the number it belongs to. It
-   overlaps the rows below, which is what a dismissible tooltip should do. */
-.pdp__spec .qhelp {
-  --qhelp-gap: 8px;
+/* Anchored to the row at a fixed offset, not to the button, so every panel opens in
+   the same column clear of every label in the list.
+
+   Anchored to the button it started 2px past whichever label it belonged to, and the
+   short ones put it far too early: "Price" ends 112px into the row, so its panel
+   opened at 114 and covered "Left-handed use" in the row below, which runs to 188.
+   Measured across the list, the widest label-plus-button ends at 188px, so 204 clears
+   every one of them with room to spare and still sits right of every button.
+
+   Full width here rather than the narrowed 288px: the product page has ~1000px to
+   the right of the button at 1280, so there is nothing to trade for. */
+.pdp__spec {
+  position: relative;
 }
 
-/* Below this width the shared fallback drops the panel below the button and hugs
-   its right edge. That keeps it on screen where the button sits at a card's right
-   edge, as it does in the quiz, but here the button sits just after the label near
-   the row's left edge, so hugging it puts 320px of panel off the left of the
-   screen. Anchor to the row instead: its left edge is the card's left edge, which
-   is on screen at any width. */
-@media (max-width: 1380px) {
-  .pdp__spec {
-    position: relative;
-  }
+.pdp__spec .qhelp {
+  position: static;
+}
 
-  .pdp__spec .qhelp {
-    position: static;
-  }
+.pdp__spec .qhelp__panel {
+  top: -10px;
+  left: 204px;
+  right: auto;
+  max-width: min(320px, calc(100vw - 228px));
+  animation-name: qhelpIn;
+}
 
+/* A 320px panel 204px into the row needs ~570px of viewport. Below that it drops
+   under the row and starts at the card's left edge — anchored to the row, so it
+   cannot hang off the left the way a button anchor would. */
+@media (max-width: 640px) {
   .pdp__spec .qhelp__panel {
+    top: calc(100% + 9px);
     left: 0;
-    right: auto;
+    max-width: min(320px, calc(100vw - 48px));
+    animation-name: qhelpDrop;
   }
 }
 

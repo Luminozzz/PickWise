@@ -14,6 +14,8 @@ import {
   productIdFromPath,
   compareIdsFromPath,
   categoryFromPath,
+  hasRealAnswers,
+  redirectForMissingAnswers,
 } from './routes.js'
 
 const PROFILE_KEY = 'pickwise_profile_id'
@@ -129,7 +131,7 @@ export default function App() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [])
 
-  const navigate = (next, payload) => {
+  const navigate = (next, payload, { replace = false } = {}) => {
     // Product detail: the payload is the mouse id, not answers.
     if (next === 'product') {
       setProductId(payload)
@@ -202,21 +204,41 @@ export default function App() {
     let target = next
     if (target === 'questionnaire' && profileId && !clearedProfile) target = 'profile'
 
+    // "For You" and the profile page need answers to be about anything, so the quiz
+    // takes their place when there are none. Decided here rather than only in the
+    // effect below so the click goes straight to the quiz: redirecting after the
+    // fact flashes a page of unranked mice and leaves a /recommendations entry in
+    // the history that bounces straight back here.
+    //
+    // The payload is the truth when one was passed — applyAnswers above is a
+    // setState, so the closure's `answers` is still the previous value, and reading
+    // it would send someone back to the quiz the moment they finished it.
+    const answersNow = payload !== undefined ? payload : answers
+    const stand = redirectForMissingAnswers(target, {
+      hasAnswers: hasRealAnswers(answersNow),
+      hasProfile: !!profileId && !clearedProfile,
+    })
+    if (stand) target = stand
+
     const path = PATHS[target] || '/'
     if (window.location.pathname !== path) {
-      window.history.pushState({}, '', path)
+      if (replace) window.history.replaceState({}, '', path)
+      else window.history.pushState({}, '', path)
     }
     setView(target)
     window.scrollTo(0, 0)
   }
 
-  // Editing a profile needs answers; without any (and no saved profile to hydrate
-  // from), send the user to the quiz. Recommendations don't require a profile —
-  // with none they fall back to general (public) ranking.
+  // Covers arriving cold on one of those URLs — a bookmark, a shared link, a
+  // reload — which the check inside navigate() never sees. Replaces rather than
+  // pushes: the URL being left redirects here again, so pushing would trap the back
+  // button bouncing between the two.
   useEffect(() => {
-    if (view === 'profile' && !answers && !profileId) {
-      navigate('questionnaire')
-    }
+    const stand = redirectForMissingAnswers(view, {
+      hasAnswers: hasRealAnswers(answers),
+      hasProfile: !!profileId,
+    })
+    if (stand) navigate(stand, undefined, { replace: true })
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [view, answers, profileId])
 
@@ -239,9 +261,11 @@ export default function App() {
     return <QuestionnairePage onNavigate={navigate} />
   }
   if (view === 'recommendations') {
-    // With a saved profile we wait for hydration; with none, show general results.
     if (!answers && profileId) return hydrationFallback()
-    return <RecommendationsPage answers={answers || {}} onNavigate={navigate} />
+    // No answers and no profile: the effect above is sending this to the quiz. Render
+    // nothing for that one frame rather than a page of mice ranked against nothing.
+    if (!hasRealAnswers(answers)) return null
+    return <RecommendationsPage answers={answers} onNavigate={navigate} />
   }
   if (view === 'profile') {
     if (!answers) return hydrationFallback()

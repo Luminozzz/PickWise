@@ -7,6 +7,8 @@ import {
   compareIdsFromPath,
   categoryFromPath,
   pathForCategory,
+  hasRealAnswers,
+  redirectForMissingAnswers,
 } from './routes.js'
 import { CATEGORIES, categoryBySlug } from './categories.js'
 
@@ -97,4 +99,49 @@ test('every category has a title and a tagline to put on its card', () => {
 test('categoryBySlug does not invent categories', () => {
   assert.equal(categoryBySlug('webcam'), null)
   assert.equal(categoryBySlug(undefined), null)
+})
+
+// ---- views that need answers ------------------------------------------------- //
+
+const nothing = { hasAnswers: false, hasProfile: false }
+
+test('For You stands aside for the quiz when there is nothing to rank against', () => {
+  // "For You" ranks mice around the answers. With none, and no saved profile to
+  // hydrate them from, it would rank against nothing and report 0 matched on every
+  // row, so the quiz is what the visitor actually needs.
+  assert.equal(redirectForMissingAnswers('recommendations', nothing), 'questionnaire')
+})
+
+test('the profile page stands aside for the quiz too', () => {
+  // Same reason: it exists to edit answers, and with none it is a blank form.
+  assert.equal(redirectForMissingAnswers('profile', nothing), 'questionnaire')
+})
+
+test('answers mean no redirect', () => {
+  const withAnswers = { hasAnswers: true, hasProfile: false }
+  assert.equal(redirectForMissingAnswers('recommendations', withAnswers), null)
+  assert.equal(redirectForMissingAnswers('profile', withAnswers), null)
+})
+
+test('a saved profile means no redirect, even before its answers arrive', () => {
+  // The answers are still being fetched. Redirecting here would throw a returning
+  // visitor into the quiz they already completed.
+  const hydrating = { hasAnswers: false, hasProfile: true }
+  assert.equal(redirectForMissingAnswers('recommendations', hydrating), null)
+  assert.equal(redirectForMissingAnswers('profile', hydrating), null)
+})
+
+test('no other view is ever redirected to the quiz', () => {
+  for (const view of ['home', 'catalogue', 'product', 'compare', 'soon', 'questionnaire']) {
+    assert.equal(redirectForMissingAnswers(view, nothing), null, `${view} was redirected`)
+  }
+})
+
+test('an empty answers object counts as no answers', () => {
+  // A profile can exist with nothing filled in, and {} is truthy, so a plain
+  // falsy check would let it through and rank against nothing.
+  assert.equal(hasRealAnswers({}), false)
+  assert.equal(hasRealAnswers(null), false)
+  assert.equal(hasRealAnswers(undefined), false)
+  assert.equal(hasRealAnswers({ 1: 'student' }), true)
 })
