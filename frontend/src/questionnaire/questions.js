@@ -229,9 +229,17 @@ export const QUESTIONS = {
     type: 'multiselect',
     optional: true,
     text: 'Any Brands You Lean Toward? (Optional)',
+    // Every brand the catalogue actually stocks, ordered by how many mice each has
+    // so the likeliest choices come first. Values are the exact `brand_name`
+    // spellings from the database — the catalogue's brand filter compares against
+    // that column directly, so a mismatch here would silently match nothing.
     options: [
       { label: 'Logitech', value: 'Logitech' },
+      { label: 'Asus', value: 'Asus' },
       { label: 'Razer', value: 'Razer' },
+      { label: 'HP', value: 'HP' },
+      { label: 'UGreen', value: 'UGreen' },
+      { label: 'HyperX', value: 'HyperX' },
       { label: 'No Preference', value: 'none', exclusive: true },
     ],
   },
@@ -267,10 +275,24 @@ export const QUESTIONS = {
     section: 'About You',
     type: 'select',
     text: 'Do You Have a Preferred Colour?',
+    // Colour families rather than the raw `mouse_skins.colour` values. Those run to
+    // 40 distinct strings, and most aren't answerable choices: duplicates
+    // ("Off-white" and "Off White"), edition names that say nothing about colour
+    // ("Faker Edition", "Minecraft Edition"), and one-offs ("Oat Milk"). Each family
+    // below is one the catalogue genuinely carries, ordered by how many mice fall
+    // into it, and each is a keyword `colourToHex` in colours.js already recognises.
+    //
+    // Black, White and Pink keep their original values so colour answers already
+    // saved against a profile still match an option.
     options: [
       { label: 'Black', value: 'Black' },
       { label: 'White', value: 'White' },
+      { label: 'Grey', value: 'Grey' },
       { label: 'Pink', value: 'Pink' },
+      { label: 'Red', value: 'Red' },
+      { label: 'Green', value: 'Green' },
+      { label: 'Blue', value: 'Blue' },
+      { label: 'Purple', value: 'Purple' },
       { label: 'No Preference', value: 'none' },
     ],
   },
