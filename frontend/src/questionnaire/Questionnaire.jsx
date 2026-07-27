@@ -1,6 +1,7 @@
 import { useEffect, useRef } from 'react'
 import { useQuestionnaire } from './useQuestionnaire.js'
 import QuestionView from './QuestionView.jsx'
+import InfoButton from './InfoButton.jsx'
 
 export default function Questionnaire({ onNavigate }) {
   const q = useQuestionnaire()
@@ -58,9 +59,12 @@ export default function Questionnaire({ onNavigate }) {
           <div className="quiz__meta">
             <span className="quiz__section">{q.question.section}</span>
           </div>
-          <h2 className="quiz__question" ref={headingRef} tabIndex={-1}>
-            {q.question.text}
-          </h2>
+          <div className="quiz__question-row">
+            <h2 className="quiz__question" ref={headingRef} tabIndex={-1}>
+              {q.question.text}
+            </h2>
+            <InfoButton entries={q.question.help} />
+          </div>
 
           <QuestionView
             question={q.question}

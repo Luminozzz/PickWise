@@ -1,4 +1,5 @@
 import { useState } from 'react'
+import { OptionRow } from './QuestionView.jsx'
 
 // Live, immediately-committing versions of the quiz inputs for the profile page.
 // They share the quiz's CSS classes but report raw value changes via onChange.
@@ -21,16 +22,17 @@ function LiveSelect({ q, value, onChange }) {
   return (
     <div className="quiz__options">
       {q.options.map((opt) => (
-        <button
-          key={opt.value}
-          type="button"
-          aria-pressed={value === opt.value}
-          className={'quiz__option' + (value === opt.value ? ' is-selected' : '')}
-          onClick={() => onChange(opt.value)}
-        >
-          <span className="quiz__radio" aria-hidden="true" />
-          <span className="quiz__option-label">{opt.label}</span>
-        </button>
+        <OptionRow option={opt} key={opt.value}>
+          <button
+            type="button"
+            aria-pressed={value === opt.value}
+            className={'quiz__option' + (value === opt.value ? ' is-selected' : '')}
+            onClick={() => onChange(opt.value)}
+          >
+            <span className="quiz__radio" aria-hidden="true" />
+            <span className="quiz__option-label">{opt.label}</span>
+          </button>
+        </OptionRow>
       ))}
     </div>
   )
@@ -55,16 +57,17 @@ function LiveMulti({ q, value, onChange }) {
   return (
     <div className="quiz__options">
       {q.options.map((opt) => (
-        <button
-          key={opt.value}
-          type="button"
-          aria-pressed={sel.includes(opt.value)}
-          className={'quiz__option' + (sel.includes(opt.value) ? ' is-selected' : '')}
-          onClick={() => toggle(opt)}
-        >
-          <span className="quiz__check" aria-hidden="true" />
-          <span className="quiz__option-label">{opt.label}</span>
-        </button>
+        <OptionRow option={opt} key={opt.value}>
+          <button
+            type="button"
+            aria-pressed={sel.includes(opt.value)}
+            className={'quiz__option' + (sel.includes(opt.value) ? ' is-selected' : '')}
+            onClick={() => toggle(opt)}
+          >
+            <span className="quiz__check" aria-hidden="true" />
+            <span className="quiz__option-label">{opt.label}</span>
+          </button>
+        </OptionRow>
       ))}
     </div>
   )

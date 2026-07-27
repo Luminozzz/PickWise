@@ -1,6 +1,7 @@
 import { useLayoutEffect, useMemo, useRef, useState } from 'react'
 import Navbar from '../components/Navbar.jsx'
 import ProfileField from '../questionnaire/ProfileField.jsx'
+import InfoButton from '../questionnaire/InfoButton.jsx'
 import { QUESTIONS } from '../questionnaire/questions.js'
 import { profileSections } from '../questionnaire/sections.js'
 import { ArrowRight } from '../components/icons.jsx'
@@ -106,7 +107,10 @@ export default function ProfilePage({ answers, onNavigate, onSaveProfile }) {
     if (!q) return null
     return (
       <div className="profile__field" key={id}>
-        <span className="profile__field-label">{q.text}</span>
+        <span className="profile__field-label">
+          {q.text}
+          <InfoButton entries={q.help} />
+        </span>
         <ProfileField question={q} value={draft[id]} onChange={(v) => change(id, v)} />
       </div>
     )
