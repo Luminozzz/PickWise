@@ -1,4 +1,5 @@
 import { useEffect, useId, useRef, useState } from 'react'
+import { Info } from '../components/icons.jsx'
 
 // Explains the technical terms in a question. Opens on hover and on click: hover
 // alone would leave the explanations unreachable on a touch screen, and click
@@ -67,7 +68,7 @@ export default function InfoButton({ entries, label = 'What does this mean?' }) 
           }
         }}
       >
-        i
+        <Info size={16} />
       </button>
 
       {open && (

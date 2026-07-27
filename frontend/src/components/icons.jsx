@@ -90,6 +90,18 @@ export function Sort({ size = 20 }) {
   )
 }
 
+// Info — marks a term that has an explanation behind it. Thin ring, short stem,
+// separate dot, so it stays legible at 16px where a filled glyph would go muddy.
+export function Info({ size = 16 }) {
+  return (
+    <svg width={size} height={size} viewBox="0 0 24 24" fill="none" aria-hidden="true">
+      <circle cx="12" cy="12" r="9" stroke="currentColor" strokeWidth="1.7" />
+      <path d="M12 11.2v5" stroke="currentColor" strokeWidth="1.9" strokeLinecap="round" />
+      <circle cx="12" cy="7.6" r="1.05" fill="currentColor" />
+    </svg>
+  )
+}
+
 // Chevron down — dropdown affordance.
 export function ChevronDown({ size = 16 }) {
   return (

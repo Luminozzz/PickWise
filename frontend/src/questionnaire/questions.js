@@ -90,24 +90,24 @@ export const QUESTIONS = {
     // rather than on the question.
     options: [
       {
-        label: 'FPS (First-Person Shooters)',
+        label: 'FPS',
         value: 'fps',
-        help: 'First person shooters like Valorant or CS2. Aiming is the main skill, so a light mouse and an accurate sensor help most.',
+        help: 'First person shooters (FPS), like Valorant or CS2. Aiming is the main skill, so a light mouse and an accurate sensor help most.',
       },
       {
         label: 'MMORPG',
         value: 'mmorpg',
-        help: 'Massively multiplayer online role playing games like World of Warcraft. You bind a lot of abilities to your mouse, so extra buttons matter more than low weight.',
+        help: 'Massively multiplayer online role playing games (MMORPG), like World of Warcraft. You bind a lot of abilities to your mouse, so extra buttons matter more than low weight.',
       },
       {
-        label: 'RTS (Real-Time Strategy)',
+        label: 'RTS',
         value: 'rts',
-        help: 'Real time strategy games like StarCraft. You click and drag across the map constantly, which rewards a responsive sensor.',
+        help: 'Real time strategy (RTS), like StarCraft. You click and drag across the map constantly, which rewards a responsive sensor.',
       },
       {
         label: 'MOBA',
         value: 'moba',
-        help: 'Multiplayer online battle arena games like League of Legends or Dota 2. Quick, accurate clicks matter more than raw speed.',
+        help: 'Multiplayer online battle arena (MOBA), like League of Legends or Dota 2. Quick, accurate clicks matter more than raw speed.',
       },
       { label: 'A Mix of Genres / Other', value: 'other' },
     ],
