@@ -1610,8 +1610,12 @@ button {
   color: var(--text-primary);
 }
 
+/* Options inside a question sit 12px apart, so 22px between questions was barely a
+   third more than the gap within one and the groups ran together. 36px is three
+   times the inner gap, which is enough for each question to read as its own block
+   without a rule between them. */
 .profile__field {
-  margin-bottom: 22px;
+  margin-bottom: 36px;
 }
 
 .profile__field:last-child {
