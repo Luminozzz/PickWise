@@ -212,7 +212,7 @@ export default function Recommendations({ answers, onNavigate }) {
       )}
 
       <div className="recs__actions">
-        <button className="btn-primary" type="button" onClick={() => onNavigate && onNavigate('landing')}>
+        <button className="btn-primary" type="button" onClick={() => onNavigate && onNavigate('catalogue')}>
           Browse all mice <ArrowRight size={14} />
         </button>
       </div>

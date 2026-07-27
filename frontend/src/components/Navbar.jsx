@@ -8,7 +8,7 @@ const PROFILE_KEY = 'pickwise_profile_id'
 // nothing: they aren't any of these three destinations, and guessing a section
 // for them would light an icon that doesn't take you back where you came from.
 const ICON_FOR_VIEW = {
-  landing: 'catalogue',
+  catalogue: 'catalogue',
   recommendations: 'recommendations',
   profile: 'profile',
   questionnaire: 'profile',
@@ -46,7 +46,7 @@ export default function Navbar({ onNavigate, view }) {
 
   return (
     <header className="navbar">
-      <a className="navbar__brand" href="/" onClick={go('landing')}>
+      <a className="navbar__brand" href="/" onClick={go('home')}>
         <img className="navbar__logo" src="/logo.png" alt="PickWise logo" />
         PickWise
       </a>
@@ -67,7 +67,7 @@ export default function Navbar({ onNavigate, view }) {
           <Sparkle />
           <span className="navbar__label">For You</span>
         </button>
-        <a {...mark('catalogue')} href="/catalogue" onClick={go('landing')}>
+        <a {...mark('catalogue')} href="/catalogue" onClick={go('catalogue')}>
           <Grid />
           <span className="navbar__label">Catalogue</span>
         </a>

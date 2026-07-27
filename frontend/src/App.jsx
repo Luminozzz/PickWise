@@ -1,49 +1,20 @@
 import { useState, useEffect } from 'react'
-import LandingPage from './pages/LandingPage.jsx'
+import HomePage from './pages/HomePage.jsx'
+import CataloguePage from './pages/CataloguePage.jsx'
+import ComingSoonPage from './pages/ComingSoonPage.jsx'
 import QuestionnairePage from './pages/QuestionnairePage.jsx'
 import RecommendationsPage from './pages/RecommendationsPage.jsx'
 import ProfilePage from './pages/ProfilePage.jsx'
 import ProductPage from './pages/ProductPage.jsx'
 import ComparePage from './pages/ComparePage.jsx'
 import { createProfile, getProfile, updateProfile } from './api.js'
-
-const PATHS = {
-  questionnaire: '/questionnaire',
-  recommendations: '/recommendations',
-  profile: '/profile',
-  landing: '/',
-}
-
-const viewForPath = (path) => {
-  if (path === '/questionnaire') return 'questionnaire'
-  if (path === '/recommendations') return 'recommendations'
-  if (path === '/profile') return 'profile'
-  if (path.startsWith('/product/')) return 'product'
-  if (path === '/compare' || path.startsWith('/compare/')) return 'compare'
-  return 'landing'
-}
-
-function productIdFromPath(path) {
-  const match = (path || '').match(/^\/product\/(\d+)/)
-  return match ? Number(match[1]) : null
-}
-
-// The compared mouse ids live in the URL (/compare/1-2-3), left to right. Bad or
-// repeated ids are dropped rather than rejected, so a hand-typed link still
-// renders. No cap here: how many columns fit is the view's call, not the URL's.
-function compareIdsFromPath(path) {
-  // Digits joined by single dashes, nothing else: a looser pattern lets
-  // /compare/-1 through, where the empty leading segment becomes 0 and the "1"
-  // silently renders mouse #1.
-  const match = (path || '').match(/^\/compare\/(\d+(?:-\d+)*)\/?$/)
-  if (!match) return []
-  const ids = []
-  for (const part of match[1].split('-')) {
-    const n = Number(part)
-    if (Number.isInteger(n) && n > 0 && !ids.includes(n)) ids.push(n)
-  }
-  return ids
-}
+import {
+  PATHS,
+  viewForPath,
+  productIdFromPath,
+  compareIdsFromPath,
+  categoryFromPath,
+} from './routes.js'
 
 const PROFILE_KEY = 'pickwise_profile_id'
 
@@ -70,6 +41,7 @@ export default function App() {
   const [profileId, setProfileId] = useState(loadProfileId)
   const [productId, setProductId] = useState(() => productIdFromPath(window.location.pathname))
   const [compareIds, setCompareIds] = useState(() => compareIdsFromPath(window.location.pathname))
+  const [category, setCategory] = useState(() => categoryFromPath(window.location.pathname))
   const [hydrationError, setHydrationError] = useState(null)
 
   // Keep the in-memory answers and their sessionStorage copy in sync.
@@ -126,6 +98,7 @@ export default function App() {
       setView(viewForPath(path))
       setProductId(productIdFromPath(path))
       setCompareIds(compareIdsFromPath(path))
+      setCategory(categoryFromPath(path))
     }
     window.addEventListener('popstate', onPop)
     return () => window.removeEventListener('popstate', onPop)
@@ -185,6 +158,20 @@ export default function App() {
         window.history.pushState({}, '', comparePath)
       }
       setView('compare')
+      window.scrollTo(0, 0)
+      return
+    }
+
+    // Coming soon: the payload is a category slug. Like the two above, this must
+    // return before the block below, which would otherwise adopt the slug as the
+    // user's answers and PUT it to their saved profile.
+    if (next === 'soon') {
+      setCategory(payload)
+      const soonPath = `/soon/${payload}`
+      if (window.location.pathname !== soonPath) {
+        window.history.pushState({}, '', soonPath)
+      }
+      setView('soon')
       window.scrollTo(0, 0)
       return
     }
@@ -269,5 +256,11 @@ export default function App() {
     if (!answers && profileId) return hydrationFallback()
     return <ComparePage productIds={compareIds} answers={answers} onNavigate={navigate} />
   }
-  return <LandingPage onNavigate={navigate} answers={answers} />
+  if (view === 'catalogue') {
+    return <CataloguePage onNavigate={navigate} answers={answers} />
+  }
+  if (view === 'soon') {
+    return <ComingSoonPage category={category} onNavigate={navigate} />
+  }
+  return <HomePage onNavigate={navigate} />
 }

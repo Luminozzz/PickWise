@@ -42,6 +42,10 @@
   --danger: #E25168;
 
   /* Layout */
+  /* The navbar's height: 24px padding, a 40px icon button, 24px padding. The
+     landing page fills the screen below it, so it needs the number. A change to
+     the navbar's padding leaves that fill a few px out — cosmetic, not broken. */
+  --nav-h: 88px;
   --radius: 16px;
   --radius-sm: 8px;
   --content-max: 1140px;
@@ -3121,5 +3125,442 @@ button {
 @media (max-width: 860px) {
   .pdp__similar-grid {
     grid-template-columns: 1fr;
+  }
+}
+
+/* ============================================================================ */
+/* Landing page — the category chooser                                          */
+/* ============================================================================ */
+
+/* Atmosphere. Fixed rather than scrolled, so the sky sits still behind the content
+   and the page reads as moving through it. z-index -1 keeps it above the canvas
+   background but behind every positioned sibling, the navbar included — at 0 it
+   would paint over the navbar, which comes earlier in the DOM. */
+.sky {
+  position: fixed;
+  inset: 0;
+  z-index: -1;
+  pointer-events: none;
+  overflow: hidden;
+  /* Three blooms, not one: a cool one overhead for the comet core, a violet
+     offset to break the symmetry, and a warm one low down for the horizon. All
+     mixed from the existing tokens rather than being new colours. */
+  background:
+    radial-gradient(
+      62% 44% at 50% 2%,
+      color-mix(in srgb, var(--secondary) 26%, transparent),
+      transparent 68%
+    ),
+    radial-gradient(
+      44% 30% at 78% 20%,
+      color-mix(in srgb, var(--primary) 13%, transparent),
+      transparent 70%
+    ),
+    radial-gradient(
+      80% 38% at 50% 106%,
+      color-mix(in srgb, var(--horizon) 13%, transparent),
+      transparent 72%
+    );
+}
+
+/* Stars are placed in percentages so they stay distributed at any width; a
+   repeating tile would give away its grid. Two layers drifting out of phase, so
+   the twinkle never looks like one synchronised pulse. */
+.sky__stars {
+  position: absolute;
+  inset: 0;
+  background-repeat: no-repeat;
+  background-image:
+    radial-gradient(1.6px 1.6px at 12% 18%, rgba(244, 242, 255, 0.75), transparent 100%),
+    radial-gradient(1.2px 1.2px at 27% 9%, rgba(244, 242, 255, 0.55), transparent 100%),
+    radial-gradient(1.5px 1.5px at 41% 24%, rgba(196, 192, 220, 0.6), transparent 100%),
+    radial-gradient(1.1px 1.1px at 58% 7%, rgba(244, 242, 255, 0.5), transparent 100%),
+    radial-gradient(1.7px 1.7px at 71% 30%, rgba(244, 242, 255, 0.7), transparent 100%),
+    radial-gradient(1.2px 1.2px at 86% 14%, rgba(196, 192, 220, 0.55), transparent 100%),
+    radial-gradient(1.4px 1.4px at 94% 33%, rgba(244, 242, 255, 0.5), transparent 100%),
+    radial-gradient(1.3px 1.3px at 6% 41%, rgba(244, 242, 255, 0.45), transparent 100%);
+  animation: skyTwinkle 7.5s ease-in-out infinite;
+}
+
+.sky__stars--far {
+  background-image:
+    radial-gradient(1.1px 1.1px at 19% 33%, rgba(196, 192, 220, 0.5), transparent 100%),
+    radial-gradient(1.3px 1.3px at 34% 46%, rgba(244, 242, 255, 0.42), transparent 100%),
+    radial-gradient(1px 1px at 49% 15%, rgba(196, 192, 220, 0.45), transparent 100%),
+    radial-gradient(1.2px 1.2px at 64% 41%, rgba(244, 242, 255, 0.4), transparent 100%),
+    radial-gradient(1px 1px at 79% 50%, rgba(196, 192, 220, 0.4), transparent 100%),
+    radial-gradient(1.4px 1.4px at 90% 6%, rgba(244, 242, 255, 0.45), transparent 100%);
+  animation-duration: 11s;
+  animation-delay: -3.5s;
+}
+
+@keyframes skyTwinkle {
+  0%,
+  100% {
+    opacity: 0.55;
+  }
+  50% {
+    opacity: 1;
+  }
+}
+
+/* Fills the first screen and centres the wordmark and the cards in it as one
+   group. The alternative — giving the hero its own vh height — centres the
+   wordmark inside that and leaves all the slack in a single gap above the cards,
+   which reads as a hole rather than as composition. Centring the group puts the
+   space around the outside, where the sky is.
+
+   min-height is a floor, so on a short screen the container grows to fit and the
+   centring becomes a no-op rather than pushing the wordmark out of reach. */
+.home {
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  min-height: calc(100svh - var(--nav-h));
+  max-width: var(--content-max);
+  margin: 0 auto;
+  padding: 0 24px 32px;
+}
+
+.home__hero {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  margin-bottom: 46px;
+  text-align: center;
+}
+
+.home__wordmark {
+  margin: 0;
+  font-size: clamp(48px, 8.6vw, 94px);
+  font-weight: 800;
+  letter-spacing: -0.025em;
+  line-height: 1.04;
+  /* The navbar's brand gradient, widened. Same three stops in the same order, so
+     the wordmark and the header read as the same mark at two sizes. */
+  background: linear-gradient(
+    96deg,
+    var(--primary) 2%,
+    var(--secondary) 48%,
+    var(--comet-magenta) 96%
+  );
+  -webkit-background-clip: text;
+  background-clip: text;
+  color: transparent;
+  animation: homeRise 0.66s cubic-bezier(0.22, 1, 0.36, 1) both;
+}
+
+.home__tagline {
+  margin: 20px 0 0;
+  /* Wide enough for one line at every size in the clamp above: the sentence needs
+     ~40ch, and the cap only comes into play once the viewport is narrower than the
+     text. balance keeps the two lines even when it does wrap. */
+  max-width: 44ch;
+  text-wrap: balance;
+  font-size: clamp(16px, 1.9vw, 20px);
+  line-height: 1.5;
+  color: var(--text-secondary);
+  animation: homeRise 0.66s cubic-bezier(0.22, 1, 0.36, 1) 0.15s both;
+}
+
+.home__eyebrow {
+  margin: 0 0 16px;
+  font-size: 12.5px;
+  font-weight: 700;
+  letter-spacing: 0.01em;
+  color: var(--text-secondary);
+  text-align: center;
+  animation: homeRise 0.6s cubic-bezier(0.22, 1, 0.36, 1) 0.32s both;
+}
+
+.home__grid {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 18px;
+}
+
+.home__grid-item {
+  display: flex;
+  /* Staggered off the card's index, so the row resolves left to right instead of
+     four cards landing at once. */
+  animation: homeRise 0.6s cubic-bezier(0.22, 1, 0.36, 1) both;
+  animation-delay: calc(0.4s + var(--card-index, 0) * 0.08s);
+}
+
+@keyframes homeRise {
+  from {
+    opacity: 0;
+    transform: translateY(16px);
+  }
+  to {
+    opacity: 1;
+    transform: none;
+  }
+}
+
+/* Semi-translucent so the sky behind it stays visible through the card, which is
+   what ties the two together; the blur keeps the text legible over whatever bloom
+   happens to sit underneath. */
+.catcard {
+  position: relative;
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 12px;
+  padding: 32px 20px 26px;
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  background: color-mix(in srgb, var(--surface-raised) 46%, transparent);
+  backdrop-filter: blur(16px) saturate(125%);
+  text-align: center;
+  transition:
+    transform 0.24s cubic-bezier(0.22, 1, 0.36, 1),
+    border-color 0.24s ease,
+    background 0.24s ease,
+    box-shadow 0.24s ease;
+}
+
+.catcard:hover {
+  transform: translateY(-5px);
+  border-color: var(--border-strong);
+  background: color-mix(in srgb, var(--surface-raised) 66%, transparent);
+  box-shadow: 0 16px 38px rgba(3, 4, 14, 0.5);
+}
+
+.catcard:focus-visible {
+  outline: none;
+  border-color: var(--primary);
+  box-shadow: 0 0 0 3px color-mix(in srgb, var(--primary) 34%, transparent);
+}
+
+.catcard__art {
+  position: relative;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  color: var(--text-muted);
+  transition: color 0.24s ease, transform 0.24s cubic-bezier(0.22, 1, 0.36, 1);
+}
+
+/* A bloom behind the art, sized off the icon rather than the card, so the glow
+   reads as coming off the product. */
+.catcard__art::before {
+  content: '';
+  position: absolute;
+  left: 50%;
+  top: 50%;
+  width: 108px;
+  height: 108px;
+  transform: translate(-50%, -50%);
+  border-radius: 50%;
+  background: radial-gradient(
+    circle,
+    color-mix(in srgb, var(--primary) 16%, transparent),
+    transparent 68%
+  );
+  opacity: 0;
+  transition: opacity 0.24s ease;
+}
+
+.catcard:hover .catcard__art {
+  color: var(--primary);
+  transform: scale(1.05);
+}
+
+.catcard:hover .catcard__art::before {
+  opacity: 1;
+}
+
+.catcard__title {
+  font-size: 19px;
+  font-weight: 700;
+  color: var(--text-primary);
+}
+
+.catcard__tagline {
+  font-size: 13px;
+  line-height: 1.45;
+  color: var(--text-muted);
+}
+
+/* Warm accent rather than the cool brand colour: this marks something absent, and
+   it should not read as the card's call to action. */
+.catcard__badge {
+  position: absolute;
+  top: 12px;
+  right: 12px;
+  padding: 3px 9px;
+  border: 1px solid color-mix(in srgb, var(--accent) 32%, transparent);
+  border-radius: 999px;
+  background: color-mix(in srgb, var(--accent) 11%, transparent);
+  color: var(--accent);
+  font-size: 10.5px;
+  font-weight: 700;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+}
+
+/* Unbuilt categories sit back a little: dimmer art, so the one you can actually
+   use is the one that draws the eye. They still hover and still lead somewhere. */
+.catcard--soon .catcard__art {
+  color: color-mix(in srgb, var(--text-muted) 66%, transparent);
+}
+
+.catcard--soon:hover .catcard__art {
+  color: var(--accent);
+}
+
+.catcard--soon:hover .catcard__art::before {
+  background: radial-gradient(
+    circle,
+    color-mix(in srgb, var(--accent) 15%, transparent),
+    transparent 68%
+  );
+}
+
+@media (max-width: 900px) {
+  .home__grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+  .home__hero {
+    margin-bottom: 38px;
+  }
+}
+
+@media (max-width: 520px) {
+  .home__grid {
+    grid-template-columns: minmax(0, 1fr);
+    gap: 14px;
+  }
+  /* A single column of tall cards is a long scroll, so they lie down: art on the
+     left, title and tagline stacked beside it, badge on the right. Laid out as a
+     row of flex items instead, the title and the tagline land side by side and a
+     19px bold title ends up competing with 13px of muted text next to it. */
+  .catcard {
+    display: grid;
+    grid-template-columns: auto minmax(0, 1fr) auto;
+    grid-template-areas:
+      'art title badge'
+      'art tagline badge';
+    align-items: center;
+    column-gap: 16px;
+    row-gap: 2px;
+    padding: 16px 18px;
+    text-align: left;
+  }
+  .catcard__art {
+    grid-area: art;
+  }
+  .catcard__art svg {
+    width: 42px;
+    height: 42px;
+  }
+  .catcard__art::before {
+    width: 76px;
+    height: 76px;
+  }
+  /* Pulled to the row boundary so the two lines read as one block. */
+  .catcard__title {
+    grid-area: title;
+    align-self: end;
+  }
+  .catcard__tagline {
+    grid-area: tagline;
+    align-self: start;
+  }
+  .catcard__badge {
+    position: static;
+    grid-area: badge;
+    align-self: center;
+  }
+}
+
+/* ---- coming soon ------------------------------------------------------------ */
+
+.soon {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  max-width: 560px;
+  margin: 0 auto;
+  padding: 6vh 24px 104px;
+  text-align: center;
+}
+
+.soon__art {
+  display: inline-flex;
+  color: var(--text-muted);
+  animation: homeRise 0.6s cubic-bezier(0.22, 1, 0.36, 1) both;
+}
+
+.soon__badge {
+  margin-top: 22px;
+  padding: 4px 12px;
+  border: 1px solid color-mix(in srgb, var(--accent) 32%, transparent);
+  border-radius: 999px;
+  background: color-mix(in srgb, var(--accent) 11%, transparent);
+  color: var(--accent);
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 0.07em;
+  text-transform: uppercase;
+  animation: homeRise 0.6s cubic-bezier(0.22, 1, 0.36, 1) 0.1s both;
+}
+
+.soon__title {
+  margin: 16px 0 0;
+  font-size: clamp(32px, 5vw, 44px);
+  font-weight: 800;
+  letter-spacing: -0.02em;
+  color: var(--text-primary);
+  animation: homeRise 0.62s cubic-bezier(0.22, 1, 0.36, 1) 0.16s both;
+}
+
+.soon__body {
+  margin: 14px 0 0;
+  font-size: 15.5px;
+  line-height: 1.6;
+  color: var(--text-secondary);
+  animation: homeRise 0.62s cubic-bezier(0.22, 1, 0.36, 1) 0.24s both;
+}
+
+.soon__actions {
+  display: flex;
+  align-items: center;
+  gap: 18px;
+  margin-top: 30px;
+  animation: homeRise 0.62s cubic-bezier(0.22, 1, 0.36, 1) 0.32s both;
+}
+
+.soon__actions .btn-primary {
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .home__wordmark,
+  .home__tagline,
+  .home__eyebrow,
+  .home__grid-item,
+  .soon__art,
+  .soon__badge,
+  .soon__title,
+  .soon__body,
+  .soon__actions {
+    animation: none;
+  }
+  .sky__stars {
+    animation: none;
+    opacity: 0.8;
+  }
+  .catcard,
+  .catcard__art,
+  .catcard__art::before {
+    transition: none;
   }
 }

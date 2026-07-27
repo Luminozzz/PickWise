@@ -3,7 +3,7 @@ import Navbar from '../components/Navbar.jsx'
 import Catalogue from '../components/Catalogue.jsx'
 import { fetchItems } from '../api.js'
 
-export default function LandingPage({ onNavigate, answers }) {
+export default function CataloguePage({ onNavigate, answers }) {
   const [items, setItems] = useState([])
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState(null)
@@ -27,7 +27,7 @@ export default function LandingPage({ onNavigate, answers }) {
 
   return (
     <>
-      <Navbar onNavigate={onNavigate} view="landing" />
+      <Navbar onNavigate={onNavigate} view="catalogue" />
       <Catalogue items={items} loading={loading} error={error} answers={answers} onNavigate={onNavigate} />
     </>
   )
