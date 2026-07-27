@@ -1,11 +1,12 @@
 import { useEffect, useId, useRef, useState } from 'react'
-import { Info } from '../components/icons.jsx'
+import { Info } from './icons.jsx'
 
-// Explains the technical terms in a question. Opens on hover and on click: hover
-// alone would leave the explanations unreachable on a touch screen, and click
-// alone would make you commit a tap to read a definition. A click pins it open so
-// it survives the pointer leaving, which is what lets you read a long entry
-// without holding the mouse still.
+// Explains a technical term, wherever one appears: a quiz question, a quiz
+// option, a product spec row or a compare table row. Opens on hover and on
+// click: hover alone would leave the explanations unreachable on a touch screen,
+// and click alone would make you commit a tap to read a definition. A click pins
+// it open so it survives the pointer leaving, which is what lets you read a long
+// entry without holding the mouse still.
 export default function InfoButton({ entries, label = 'What does this mean?' }) {
   const [open, setOpen] = useState(false)
   const [pinned, setPinned] = useState(false)

@@ -1,8 +1,10 @@
 import { useEffect, useState } from 'react'
 import Navbar from '../components/Navbar.jsx'
 import ProductCard from '../components/ProductCard.jsx'
+import InfoButton from '../components/InfoButton.jsx'
 import { fetchProduct } from '../api.js'
 import { colourToHex } from '../colours.js'
+import { SPEC_HELP } from '../glossary.js'
 import { ArrowUp, ArrowDown, Minus, ArrowRight } from '../components/icons.jsx'
 
 const STATUS_ICON = { fit: ArrowUp, unfit: ArrowDown, neutral: Minus }
@@ -223,7 +225,13 @@ export default function ProductPage({ productId, answers, onNavigate }) {
                   <span className="pdp__spec-arrow" aria-hidden="true">
                     {Icon ? <Icon size={15} /> : null}
                   </span>
-                  <span className="pdp__spec-label">{d.label}</span>
+                  <span className="pdp__spec-label">
+                    {d.label}
+                    <InfoButton
+                      entries={SPEC_HELP[d.key] ? [SPEC_HELP[d.key]] : null}
+                      label={`What does ${d.label} mean?`}
+                    />
+                  </span>
                   <span className="pdp__spec-value">{d.value}</span>
                 </li>
               )

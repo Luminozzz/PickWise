@@ -2556,7 +2556,9 @@ button {
   background: var(--surface);
   border: 1px solid var(--border);
   border-radius: var(--radius);
-  overflow: hidden;
+  /* No overflow:hidden here — it would clip the rounded corners for free, but it
+     would also cut off a help panel opened from one of the last rows. The edge
+     rows round themselves instead, which the inset fit bars follow. */
 }
 
 .pdp__spec {
@@ -2571,6 +2573,11 @@ button {
 
 .pdp__spec:first-child {
   border-top: none;
+  border-radius: calc(var(--radius) - 1px) calc(var(--radius) - 1px) 0 0;
+}
+
+.pdp__spec:last-child {
+  border-radius: 0 0 calc(var(--radius) - 1px) calc(var(--radius) - 1px);
 }
 
 .pdp__spec-arrow {
@@ -2604,7 +2611,38 @@ button {
 }
 
 .pdp__spec-label {
+  display: flex;
+  align-items: center;
+  gap: 2px;
   color: var(--text-secondary);
+}
+
+/* The panel opens into the empty middle of the row, between the label and the
+   value, so it explains the spec without covering the number it belongs to. It
+   overlaps the rows below, which is what a dismissible tooltip should do. */
+.pdp__spec .qhelp {
+  --qhelp-gap: 8px;
+}
+
+/* Below this width the shared fallback drops the panel below the button and hugs
+   its right edge. That keeps it on screen where the button sits at a card's right
+   edge, as it does in the quiz, but here the button sits just after the label near
+   the row's left edge, so hugging it puts 320px of panel off the left of the
+   screen. Anchor to the row instead: its left edge is the card's left edge, which
+   is on screen at any width. */
+@media (max-width: 1380px) {
+  .pdp__spec {
+    position: relative;
+  }
+
+  .pdp__spec .qhelp {
+    position: static;
+  }
+
+  .pdp__spec .qhelp__panel {
+    left: 0;
+    right: auto;
+  }
 }
 
 .pdp__spec-value {
@@ -2671,7 +2709,9 @@ button {
 /* One template for the header and every row, so columns can never drift apart.
    --cmp-cols is set inline from the product count. */
 .cmp__grid {
-  --cmp-label: 150px;
+  /* Wide enough for the longest label plus its help button. "Left-handed use"
+     measures ~105px at 13.5px/600, and the button adds 22px. */
+  --cmp-label: 182px;
   display: flex;
   flex-direction: column;
   border: 1px solid var(--border);
@@ -2711,11 +2751,35 @@ button {
 .cmp__rowlabel {
   display: flex;
   align-items: center;
+  gap: 2px;
   padding: 14px 18px;
   font-size: 13.5px;
   font-weight: 600;
   color: var(--text-muted);
   border-right: 1px solid var(--border);
+}
+
+/* Drops below the row instead of opening rightward. The label column is at the far
+   left of the table, so rightward would land the panel squarely on top of the
+   values for this very row — the numbers you opened it to understand. Downward
+   covers the rows beneath and leaves every column on this row readable.
+
+   Anchored to the row, not to the button: a button anchor puts the panel's left
+   edge wherever the label text happens to end, which on a narrow screen is far
+   enough in that a 320px panel runs off the right. The row's left edge is the
+   table's left edge, so the panel is on screen at any width by construction. */
+.cmp__row {
+  position: relative;
+}
+
+.cmp__rowlabel .qhelp {
+  position: static;
+}
+
+.cmp__rowlabel .qhelp__panel {
+  top: calc(100% + 8px);
+  left: 0;
+  animation-name: qhelpDrop;
 }
 
 .cmp__col {
@@ -2881,7 +2945,7 @@ button {
 
 @media (max-width: 860px) {
   .cmp__grid {
-    --cmp-label: 108px;
+    --cmp-label: 132px;
   }
   .cmp__rowlabel {
     padding: 12px;

@@ -1,8 +1,10 @@
 import { useEffect, useMemo, useState } from 'react'
 import Navbar from '../components/Navbar.jsx'
 import ComparePicker from '../components/ComparePicker.jsx'
+import InfoButton from '../components/InfoButton.jsx'
 import { fetchCompare, fetchItems } from '../api.js'
 import { ArrowUp, ArrowDown, Minus, ArrowRight } from '../components/icons.jsx'
+import { SPEC_HELP } from '../glossary.js'
 
 const STATUS_ICON = { fit: ArrowUp, unfit: ArrowDown, neutral: Minus }
 // Spoken equivalents of the fit arrows; 'none' stays silent (nothing was judged).
@@ -262,7 +264,13 @@ export default function ComparePage({ productIds, answers, onNavigate }) {
               {/* Spec rows, most important first */}
               {rows.map((row) => (
                 <div className="cmp__row" role="row" key={row.key}>
-                  <div className="cmp__rowlabel" role="rowheader">{row.label}</div>
+                  <div className="cmp__rowlabel" role="rowheader">
+                    {row.label}
+                    <InfoButton
+                      entries={SPEC_HELP[row.key] ? [SPEC_HELP[row.key]] : null}
+                      label={`What does ${row.label} mean?`}
+                    />
+                  </div>
                   {row.cells.slice(0, maxCols).map((cell, i) => {
                     const Icon = STATUS_ICON[cell.status]
                     return (
