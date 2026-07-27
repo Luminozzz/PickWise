@@ -1,5 +1,25 @@
 import { useState } from 'react'
 import RangeSlider from './RangeSlider.jsx'
+import InfoButton from './InfoButton.jsx'
+
+// An option and, when the option names a technical term, its explanation. The
+// info button is a sibling of the option rather than a child: a button inside a
+// button is invalid, and the click would be fought over. It's positioned over the
+// option's right edge so every option keeps its full width whether it has help or
+// not.
+export function OptionRow({ option, children }) {
+  return (
+    <div className={'quiz__option-row' + (option.help ? ' has-help' : '')}>
+      {children}
+      {option.help && (
+        <InfoButton
+          entries={[{ text: option.help }]}
+          label={`What does ${option.label} mean?`}
+        />
+      )}
+    </div>
+  )
+}
 
 // Renders the right input for a question's type.
 export default function QuestionView({ question, answer, onSelect, onSubmit }) {
@@ -21,16 +41,17 @@ function SelectInput({ question, answer, onSelect }) {
   return (
     <div className="quiz__options">
       {question.options.map((opt) => (
-        <button
-          key={opt.value}
-          type="button"
-          aria-pressed={answer === opt.value}
-          className={'quiz__option' + (answer === opt.value ? ' is-selected' : '')}
-          onClick={() => onSelect(opt)}
-        >
-          <span className="quiz__radio" aria-hidden="true" />
-          <span className="quiz__option-label">{opt.label}</span>
-        </button>
+        <OptionRow option={opt} key={opt.value}>
+          <button
+            type="button"
+            aria-pressed={answer === opt.value}
+            className={'quiz__option' + (answer === opt.value ? ' is-selected' : '')}
+            onClick={() => onSelect(opt)}
+          >
+            <span className="quiz__radio" aria-hidden="true" />
+            <span className="quiz__option-label">{opt.label}</span>
+          </button>
+        </OptionRow>
       ))}
     </div>
   )
@@ -88,16 +109,17 @@ function MultiSelectInput({ question, initial, onSubmit }) {
     <div>
       <div className="quiz__options">
         {question.options.map((opt) => (
-          <button
-            key={opt.value}
-            type="button"
-            aria-pressed={sel.includes(opt.value)}
-            className={'quiz__option' + (sel.includes(opt.value) ? ' is-selected' : '')}
-            onClick={() => toggle(opt)}
-          >
-            <span className="quiz__check" aria-hidden="true" />
-            <span className="quiz__option-label">{opt.label}</span>
-          </button>
+          <OptionRow option={opt} key={opt.value}>
+            <button
+              type="button"
+              aria-pressed={sel.includes(opt.value)}
+              className={'quiz__option' + (sel.includes(opt.value) ? ' is-selected' : '')}
+              onClick={() => toggle(opt)}
+            >
+              <span className="quiz__check" aria-hidden="true" />
+              <span className="quiz__option-label">{opt.label}</span>
+            </button>
+          </OptionRow>
         ))}
       </div>
       <button className="btn-primary quiz__continue" type="button" onClick={() => onSubmit(sel)}>

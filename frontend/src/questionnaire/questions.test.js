@@ -51,3 +51,55 @@ test('each colour family is distinct — no two options mean the same swatch', (
   const hexes = chooseable(21).map(colourToHex)
   assert.equal(new Set(hexes).size, hexes.length, 'two colour options map to one family')
 })
+
+// ---- term help -------------------------------------------------------------- //
+
+// The questions whose technical terms sit in the question itself, so the help hangs
+// off the question and one button covers every term in it.
+const QUESTION_HELP = {
+  4: ['Shortcut buttons'],
+  6: ['Lightweight'],
+  7: ['RGB'],
+  9: ['Macro'],
+  13: ['Hand size'],
+  15: ['Wireless'],
+  20: ['DPI', 'Polling rate'],
+}
+
+// The questions whose terms are the option names, so each option carries its own.
+const OPTION_HELP = {
+  5: ['fps', 'mmorpg', 'rts', 'moba'],
+  19: ['palm', 'claw', 'fingertip'],
+}
+
+test('every question meant to explain its terms does', () => {
+  for (const [id, terms] of Object.entries(QUESTION_HELP)) {
+    const help = QUESTIONS[id].help
+    assert.ok(Array.isArray(help), `Q${id} has no help array`)
+    assert.deepEqual(help.map((h) => h.term), terms, `Q${id} explains the wrong terms`)
+  }
+})
+
+test('question help entries all carry a term and some text', () => {
+  for (const id of Object.keys(QUESTION_HELP)) {
+    for (const entry of QUESTIONS[id].help) {
+      assert.ok(entry.term?.length, `Q${id} has an entry with no term to bold`)
+      assert.ok(entry.text?.length > 40, `Q${id}/${entry.term} has no real explanation`)
+    }
+  }
+})
+
+test('every option meant to explain itself does, and no others do', () => {
+  for (const [id, expected] of Object.entries(OPTION_HELP)) {
+    const withHelp = QUESTIONS[id].options.filter((o) => o.help).map((o) => o.value)
+    assert.deepEqual(withHelp, expected, `Q${id} has help on the wrong options`)
+  }
+})
+
+test('no question carries help in both places at once', () => {
+  // One button per term, in one place. Both would show the same text twice.
+  for (const q of Object.values(QUESTIONS)) {
+    const optionHelp = (q.options || []).some((o) => o.help)
+    assert.ok(!(q.help && optionHelp), `Q${q.id} explains terms at both levels`)
+  }
+})

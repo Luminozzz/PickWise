@@ -756,11 +756,186 @@ button {
   font-size: 15px;
 }
 
+/* ------------------------------------------- Term help (the little "i" button) */
+/* Sits beside a question, or over the right edge of an option that names a
+   technical term. Opens on hover and on click; see InfoButton.jsx for why both. */
+.qhelp {
+  position: relative;
+  display: inline-flex;
+  flex: none;
+  vertical-align: middle;
+  /* How far right of the button the panel opens. The panel is offset from the
+     button, but the button isn't always at the card's edge, so this has to absorb
+     however far inside the edge it sits or the panel opens on top of the card and
+     covers whatever is beside it. Default assumes the button is at the edge. */
+  --qhelp-gap: 12px;
+}
+
+/* Inset 16px from the option's right edge, so clear that too. */
+.quiz__option-row .qhelp {
+  --qhelp-gap: 30px;
+}
+
+/* Profile fields sit inside a card with 20px of padding, and the buttons are a
+   further 16px in. Must come after the option rule above: on the profile page both
+   selectors match an option's button and this is the one that has to win. */
+.profile .qhelp {
+  --qhelp-gap: 50px;
+}
+
+/* Just the glyph. No ring or fill of its own: the icon already draws a circle, and
+   wrapping that in a second bordered circle made a small control look heavy. The
+   box stays 22px for a comfortable hit target even though nothing is painted. */
+.qhelp__btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 22px;
+  height: 22px;
+  padding: 0;
+  border: none;
+  border-radius: 50%;
+  background: none;
+  color: var(--text-muted);
+  line-height: 0;
+  transition: color 0.15s ease;
+}
+
+.qhelp__btn:hover,
+.qhelp__btn.is-open {
+  color: var(--primary);
+}
+
+.qhelp__btn:focus-visible {
+  outline: none;
+  box-shadow: 0 0 0 2px var(--bg), 0 0 0 3px var(--primary);
+}
+
+/* Beside the button, in the empty space to the right of the quiz card, so it
+   explains a term without covering the question or the options. That only works
+   where the space exists: the card is 680px wide and centred, so the room to its
+   right is (viewport - 680) / 2, and a 320px panel plus its gap needs about
+   1380px of viewport. Below that it drops underneath the button instead, see the
+   media query further down. */
+.qhelp__panel {
+  position: absolute;
+  top: -10px;
+  left: calc(100% + var(--qhelp-gap));
+  z-index: 30;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  width: max-content;
+  max-width: min(320px, calc(100vw - 48px));
+  padding: 12px 14px;
+  background: var(--surface-raised);
+  border: 1px solid var(--border-strong);
+  border-radius: var(--radius-sm);
+  box-shadow: 0 10px 24px rgba(3, 4, 14, 0.5);
+  font-size: 13px;
+  font-weight: 400;
+  line-height: 1.5;
+  color: var(--text-secondary);
+  text-align: left;
+  white-space: normal;
+  animation: qhelpIn 0.16s cubic-bezier(0.22, 1, 0.36, 1) both;
+}
+
+/* Slides out from the button rather than fading in place. */
+@keyframes qhelpIn {
+  from {
+    opacity: 0;
+    transform: translateX(-6px);
+  }
+  to {
+    opacity: 1;
+    transform: translateX(0);
+  }
+}
+
+/* Not enough room beside the card, so it drops below the button and hugs its right
+   edge, which keeps it inside the viewport at any width. */
+@media (max-width: 1380px) {
+  .qhelp__panel {
+    top: calc(100% + 9px);
+    left: auto;
+    right: -6px;
+    animation-name: qhelpDrop;
+  }
+}
+
+@keyframes qhelpDrop {
+  from {
+    opacity: 0;
+    transform: translateY(-4px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.qhelp__entry {
+  display: block;
+}
+
+.qhelp__term {
+  color: var(--text-primary);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .qhelp__panel {
+    animation: none;
+  }
+}
+
+/* The question heading and its help button. Button is top-aligned so it sits with
+   the first line of a heading that wraps. */
+.quiz__question-row {
+  display: flex;
+  align-items: flex-start;
+  gap: 12px;
+  margin-bottom: 26px;
+}
+
+.quiz__question-row .quiz__question {
+  flex: 1;
+  margin-bottom: 0;
+}
+
+.quiz__question-row .qhelp {
+  margin-top: 6px;
+}
+
 /* Options (select + multiselect) */
 .quiz__options {
   display: flex;
   flex-direction: column;
   gap: 12px;
+}
+
+/* One row per option. The help button is absolutely placed over the option's right
+   edge rather than laid out beside it, so options with help stay exactly as wide as
+   those without and the column of buttons keeps a straight right edge. */
+.quiz__option-row {
+  position: relative;
+  display: flex;
+}
+
+.quiz__option-row .quiz__option {
+  flex: 1;
+}
+
+.quiz__option-row.has-help .quiz__option {
+  /* Clear of the button, so a long label never runs underneath it. */
+  padding-right: 48px;
+}
+
+.quiz__option-row.has-help > .qhelp {
+  position: absolute;
+  top: 50%;
+  right: 16px;
+  transform: translateY(-50%);
 }
 
 .quiz__option {
@@ -1435,8 +1610,12 @@ button {
   color: var(--text-primary);
 }
 
+/* Options inside a question sit 12px apart, so 22px between questions was barely a
+   third more than the gap within one and the groups ran together. 36px is three
+   times the inner gap, which is enough for each question to read as its own block
+   without a rule between them. */
 .profile__field {
-  margin-bottom: 22px;
+  margin-bottom: 36px;
 }
 
 .profile__field:last-child {
@@ -1444,11 +1623,23 @@ button {
 }
 
 .profile__field-label {
-  display: block;
+  display: flex;
+  align-items: flex-start;
+  gap: 10px;
   margin-bottom: 10px;
   font-size: 14.5px;
   font-weight: 600;
   color: var(--text-secondary);
+}
+
+/* Pushed to the right of the label so it lines up down the form rather than
+   trailing whatever length each question happens to be. The 16px matches the inset
+   the option-level buttons sit at, so a question's button and its options' buttons
+   share one column. On the profile page both kinds are on screen together, which is
+   where any mismatch shows. */
+.profile__field-label .qhelp {
+  margin-left: auto;
+  margin-right: 16px;
 }
 
 .profile__error {
