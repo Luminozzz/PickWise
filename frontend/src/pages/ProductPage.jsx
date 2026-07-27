@@ -57,7 +57,7 @@ export default function ProductPage({ productId, answers, onNavigate }) {
         <Navbar onNavigate={onNavigate} view="product" />
         <main className="pdp">
           <div className="recs__state">{error}</div>
-          <button className="quiz__restart" type="button" onClick={() => onNavigate('landing')}>
+          <button className="quiz__restart" type="button" onClick={() => onNavigate('catalogue')}>
             Back to catalogue
           </button>
         </main>
