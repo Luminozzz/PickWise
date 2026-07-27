@@ -1,7 +1,7 @@
 import { useEffect, useRef } from 'react'
 import { useQuestionnaire } from './useQuestionnaire.js'
 import QuestionView from './QuestionView.jsx'
-import InfoButton from './InfoButton.jsx'
+import InfoButton from '../components/InfoButton.jsx'
 
 export default function Questionnaire({ onNavigate }) {
   const q = useQuestionnaire()

@@ -1,7 +1,7 @@
 import { useLayoutEffect, useMemo, useRef, useState } from 'react'
 import Navbar from '../components/Navbar.jsx'
 import ProfileField from '../questionnaire/ProfileField.jsx'
-import InfoButton from '../questionnaire/InfoButton.jsx'
+import InfoButton from '../components/InfoButton.jsx'
 import { QUESTIONS } from '../questionnaire/questions.js'
 import { profileSections } from '../questionnaire/sections.js'
 import { ArrowRight } from '../components/icons.jsx'

@@ -10,6 +10,12 @@
 //   1 -> 2 ->(jump 5) 5,6,7,8 ->(return) 3,4 -> 13,14,15,(16),17,18
 //
 // User-facing copy (section names, question text, option labels) is title case.
+//
+// Term explanations live in glossary.js, not here: the product page and the
+// compare table show some of the same specs, and one definition per term keeps
+// the quiz and those pages from drifting apart.
+
+import { TERMS } from '../glossary.js'
 
 export const FLOWS = {
   student: [2, 3, 4],
@@ -68,12 +74,7 @@ export const QUESTIONS = {
     section: 'Student',
     type: 'select',
     text: 'Would Shortcut Buttons (Back/Forward, Copy/Paste) Make Studying Easier?',
-    help: [
-      {
-        term: 'Shortcut buttons',
-        text: 'Extra buttons, usually on the side by your thumb, that you can set to actions like back, forward, copy or paste.',
-      },
-    ],
+    help: [TERMS.shortcutButtons],
     options: [
       { label: 'Yes, That Sounds Useful', value: 'yes' },
       { label: 'No, I Prefer a Simple Mouse', value: 'no' },
@@ -92,22 +93,22 @@ export const QUESTIONS = {
       {
         label: 'FPS',
         value: 'fps',
-        help: 'First person shooters (FPS), like Valorant or CS2. Aiming is the main skill, so a light mouse and an accurate sensor help most.',
+        help: TERMS.fps,
       },
       {
         label: 'MMORPG',
         value: 'mmorpg',
-        help: 'Massively multiplayer online role playing games (MMORPG), like World of Warcraft. You bind a lot of abilities to your mouse, so extra buttons matter more than low weight.',
+        help: TERMS.mmorpg,
       },
       {
         label: 'RTS',
         value: 'rts',
-        help: 'Real time strategy (RTS), like StarCraft. You click and drag across the map constantly, which rewards a responsive sensor.',
+        help: TERMS.rts,
       },
       {
         label: 'MOBA',
         value: 'moba',
-        help: 'Multiplayer online battle arena (MOBA), like League of Legends or Dota 2. Quick, accurate clicks matter more than raw speed.',
+        help: TERMS.moba,
       },
       { label: 'A Mix of Genres / Other', value: 'other' },
     ],
@@ -117,12 +118,7 @@ export const QUESTIONS = {
     section: 'Gamer',
     type: 'select',
     text: 'How Much Does a Lightweight Mouse Matter to You?',
-    help: [
-      {
-        term: 'Lightweight',
-        text: 'Mouse weight in grams. A lighter mouse is easier to move quickly and causes less fatigue over a long session, while a heavier one can feel steadier. Anything under about 80g counts as light.',
-      },
-    ],
+    help: [TERMS.weight],
     options: [
       { label: 'A Lot — the Lighter, the Better', value: 'high' },
       { label: 'Somewhat', value: 'medium' },
@@ -134,12 +130,7 @@ export const QUESTIONS = {
     section: 'Gamer',
     type: 'select',
     text: 'Do You Want RGB Lighting?',
-    help: [
-      {
-        term: 'RGB',
-        text: 'Colour changing LED lighting built into the mouse. It is cosmetic and does not affect how the mouse tracks, though on a wireless mouse it will drain the battery faster.',
-      },
-    ],
+    help: [TERMS.rgb],
     options: [
       { label: 'Yes, I Love It', value: 'yes' },
       { label: "I Don't Mind Either Way", value: 'either' },
@@ -163,12 +154,7 @@ export const QUESTIONS = {
     section: 'Office',
     type: 'select',
     text: 'Do You Need Programmable Buttons for Shortcuts or Macros?',
-    help: [
-      {
-        term: 'Macro',
-        text: 'A macro is a sequence of actions saved to a single button. It could be a copy and paste, going back to a previous page, or opening an app. Programmable buttons are the extra buttons you assign them to.',
-      },
-    ],
+    help: [TERMS.macro],
     options: [
       { label: 'Yes, I Rely on Them', value: 'yes' },
       { label: 'Occasionally Handy', value: 'sometimes' },
@@ -215,12 +201,7 @@ export const QUESTIONS = {
     section: 'About You',
     type: 'select',
     text: "What's Your Hand Size?",
-    help: [
-      {
-        term: 'Hand size',
-        text: 'Measure from your wrist crease to the tip of your middle finger. In general, under 17cm is small, 17 to 19cm is medium, and above 19cm is large. This decides which mouse lengths will feel comfortable.',
-      },
-    ],
+    help: [TERMS.handSize],
     options: [
       { label: 'Large', value: 'large' },
       { label: 'Medium', value: 'medium' },
@@ -243,12 +224,7 @@ export const QUESTIONS = {
     section: 'About You',
     type: 'select',
     text: 'Do You Prefer a Wireless Mouse?',
-    help: [
-      {
-        term: 'Wireless',
-        text: 'Wireless mice connect either through a small USB dongle or over Bluetooth. A dongle is more responsive and better for gaming. Bluetooth saves a USB port and is handier for travel, but it usually has higher latency.',
-      },
-    ],
+    help: [TERMS.connectivity],
     options: [
       { label: 'Yes, Wireless', value: 'yes', push: [16] },
       { label: 'Preferably', value: 'preferably', push: [16] },
@@ -309,17 +285,17 @@ export const QUESTIONS = {
       {
         label: 'Palm Grip — Whole Hand Rests on It',
         value: 'palm',
-        help: 'The most common way to hold a mouse. Your whole hand rests flat along it. This is the most relaxed hold and it suits larger, taller mice.',
+        help: TERMS.palmGrip,
       },
       {
         label: 'Claw Grip — Arched Fingers',
         value: 'claw',
-        help: 'Your palm rests on the back of the mouse while your fingers arch up to the buttons. It sits between the other two grips and favours medium sized mice.',
+        help: TERMS.clawGrip,
       },
       {
         label: 'Fingertip Grip — Fingers Only',
         value: 'fingertip',
-        help: 'Only your fingertips touch the mouse and your palm floats above it. This gives the quickest movements and suits small, light mice.',
+        help: TERMS.fingertipGrip,
       },
       { label: 'Not Sure', value: 'unsure' },
     ],
@@ -331,16 +307,7 @@ export const QUESTIONS = {
     text: 'How Much Do You Prioritise High Sensitivity (DPI) and Low Latency (Polling Rate)?',
     // Two terms, both in the question rather than in the options, so they share one
     // button and render as a paragraph each.
-    help: [
-      {
-        term: 'DPI',
-        text: 'Dots per inch. It sets how far the cursor travels for a given hand movement, so a higher DPI gives faster cursor speed and finer control over small adjustments. Most people use far less than a mouse’s maximum, so past a certain point a bigger number makes little difference.',
-      },
-      {
-        term: 'Polling rate',
-        text: 'How many times per second the mouse reports its position to your computer, measured in Hz. A higher rate means the cursor updates sooner, which reduces latency. Latency is the lag between moving your mouse and that movement showing up on screen. 1000Hz is the common standard and most people will not notice the difference above it. Rates of 4000Hz to 8000Hz are aimed at high end competitive play, and they make your computer work harder and use more battery on a wireless mouse.',
-      },
-    ],
+    help: [TERMS.dpi, TERMS.polling],
     options: [
       { label: 'A Lot — I Want Top Sensitivity and the Fastest Response', value: 'high' },
       { label: 'Somewhat', value: 'medium' },

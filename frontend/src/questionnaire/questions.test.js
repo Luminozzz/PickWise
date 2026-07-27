@@ -55,14 +55,17 @@ test('each colour family is distinct — no two options mean the same swatch', (
 // ---- term help -------------------------------------------------------------- //
 
 // The questions whose technical terms sit in the question itself, so the help hangs
-// off the question and one button covers every term in it.
+// off the question and one button covers every term in it. Weight and Connectivity
+// read as the spec's name rather than the question's ("Lightweight", "Wireless")
+// because the product page and the compare table label those rows and share the
+// definition.
 const QUESTION_HELP = {
   4: ['Shortcut buttons'],
-  6: ['Lightweight'],
+  6: ['Weight'],
   7: ['RGB'],
   9: ['Macro'],
   13: ['Hand size'],
-  15: ['Wireless'],
+  15: ['Connectivity'],
   20: ['DPI', 'Polling rate'],
 }
 
@@ -93,6 +96,17 @@ test('every option meant to explain itself does, and no others do', () => {
   for (const [id, expected] of Object.entries(OPTION_HELP)) {
     const withHelp = QUESTIONS[id].options.filter((o) => o.help).map((o) => o.value)
     assert.deepEqual(withHelp, expected, `Q${id} has help on the wrong options`)
+  }
+})
+
+test('option help is a glossary entry, not a bare string', () => {
+  // The renderer reads .text off it. A plain string would render as undefined
+  // rather than failing, so the shape is worth pinning.
+  for (const id of Object.keys(OPTION_HELP)) {
+    for (const opt of QUESTIONS[id].options.filter((o) => o.help)) {
+      assert.equal(typeof opt.help, 'object', `Q${id}/${opt.value} help is not an entry`)
+      assert.ok(opt.help.text?.length > 40, `Q${id}/${opt.value} has no real explanation`)
+    }
   }
 })
 

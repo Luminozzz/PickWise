@@ -1,6 +1,6 @@
 import { useState } from 'react'
 import RangeSlider from './RangeSlider.jsx'
-import InfoButton from './InfoButton.jsx'
+import InfoButton from '../components/InfoButton.jsx'
 
 // An option and, when the option names a technical term, its explanation. The
 // info button is a sibling of the option rather than a child: a button inside a
@@ -12,8 +12,10 @@ export function OptionRow({ option, children }) {
     <div className={'quiz__option-row' + (option.help ? ' has-help' : '')}>
       {children}
       {option.help && (
+        // Only the text: the option's own label already names the term, so
+        // repeating it in bold above the explanation would say it twice.
         <InfoButton
-          entries={[{ text: option.help }]}
+          entries={[{ text: option.help.text }]}
           label={`What does ${option.label} mean?`}
         />
       )}
